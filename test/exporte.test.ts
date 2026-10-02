@@ -16,6 +16,9 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const ERWARTET: Record<string, string[]> = {
   schema: ['EMAIL_ADRESSE', 'URL_ODER_SCHEME', 'chTelefon', 'contentBildPfad', 'plz', 'sichererText', 'sichererTextFuer'],
   'json-schema': ['alsJsonSchemaAus'],
+  lints: ['enthaeltGefaehrlicheKeys', 'kontaktGateBefund', 'lintDatei', 'lintJsonKeys', 'lintText', 'safeJsonParse'],
+  integrationen: ['bilderCopy', 'contentLint', 'nurCollectionsLint', 'rehypeExterneLinks', 'sanitizeSchema'],
+  test: ['inlineBefunde', 'symlinkEintraege'],
 };
 
 function exporteUeberPaketnamen(subpath: string): string[] {
