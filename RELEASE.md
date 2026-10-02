@@ -1,0 +1,60 @@
+# Release von @bondwerk/site-kit
+
+## Ablauf
+
+1. Version in `package.json` heben, PR, grüne CI (inklusive Identifikator-Scan), Merge auf `main`.
+2. Tag `vX.Y.Z` auf dem Merge-Commit pushen. Nur Admins dürfen `v*`-Tags anlegen; kein Tag lässt
+   sich löschen, verschieben oder überschreiben (Rulesets `release-tags-anlegen` und
+   `release-tags-unveraenderlich`).
+3. Workflow „Release": `paket` baut und packt, `pruefen` testet und scannt genau diesen Tarball,
+   `veroeffentlichen` wartet im Environment `npm-release` auf die Freigabe.
+4. Freigabe durch den Betreiber (Selbstfreigabe, ein Reviewer). Die Kontrolle gegen eine bösartige
+   Version liegt im bewussten Pin pro Site: keine Site übernimmt eine Version ohne `kit-bump`, PR
+   und neuen `kitVersion`-Pin.
+5. Kontrolle: `npm view @bondwerk/site-kit@X.Y.Z dist.integrity` gleich dem `integrity` aus dem
+   Log von `paket`; die Paketseite zeigt Provenance mit Repo und Tag-Commit.
+
+CI und Release arbeiten mit npm 11, exakt gepinnt (npm 10 bricht auf dem Lockfile ab). Lokal
+entsprechend `npx npm@11 …`.
+
+## Sichtbarkeit
+
+Das Repo war bis zum ersten Release privat. Vor dem Umschalten auf öffentlich hat der Betreiber
+Code, ganze Historie, PR-Refs, Tag-Texte und alle PR-Texte gegen die Identifikator-Liste gescannt
+(Ergebnis 0 Treffer). Die CI scannt seither jeden Push und jeden PR.
+
+## Identifikator-Liste
+
+- Die Liste liegt im Passwort-Manager-Eintrag „site-kit Identifikatoren" und als Actions-Geheimnis
+  `SITE_KIT_IDENTIFIKATOREN`, nirgends sonst: nicht im Repo, nicht in Issues, PRs oder Logs.
+- Fehlt das Geheimnis, meldet die CI nur einen Hinweis und überspringt den Scan; der Release
+  scheitert dann im Job `pruefen` (Exit 2). Das Geheimnis wird deshalb vor dem ersten PR gesetzt.
+- Die CI scannt Titel und Beschreibung eines PRs, nicht seine Kommentare und Reviews. Kundennamen
+  haben auch in Kommentaren nichts verloren; vor dem Umschalten scannt der Betreiber sie mit.
+- Jede Änderung geschieht im selben Schritt an beiden Orten: Eintrag im Passwort-Manager
+  bearbeiten, nach `/dev/shm/kit-ids.txt` legen (`chmod 600`),
+  `gh secret set SITE_KIT_IDENTIFIKATOREN --repo bondwerk/product-site-kit < /dev/shm/kit-ids.txt`,
+  `shred -u /dev/shm/kit-ids.txt`.
+- Ein Eintrag je Zeile. Einträge unter vier Zeichen treffen nur an Wortgrenzen; ein Kürzel, das
+  auch mitten in Wörtern stört, wird durch eine längere, eindeutige Form ergänzt.
+- Integrity-Werte (`sha1-`, `sha256-`, `sha384-`, `sha512-` in exakter Länge, etwa im
+  `package-lock.json`) werden vor dem Abgleich entfernt, weil Base64 zufällig kurze Einträge enthält.
+- Neuer Kunde = neuer Eintrag, bevor das erste Stück Code aus seinem Umfeld ins Kit wandert.
+
+## Rückweg bei einem Leck
+
+Ein Kundenname, eine Domain oder ein anderes Identifikationsmerkmal ist veröffentlicht worden:
+
+1. **npm, innerhalb von 72 Stunden nach dem Veröffentlichen:** betroffene Version zurückziehen
+   (npmjs.com → Paket → Settings → „Unpublish" für genau diese Version, mit 2FA). npm erlaubt
+   das in diesem Fenster, solange kein anderes veröffentlichtes Paket von der Version abhängt.
+2. **npm, nach 72 Stunden:** `npm deprecate @bondwerk/site-kit@X.Y.Z "<Grund ohne den Namen>"`
+   in einer kurzen Sitzung mit 2FA, sofort eine bereinigte Folgeversion veröffentlichen und alle
+   Sites per `kit-bump` darauf heben.
+3. **GitHub:** Repo sofort auf privat schalten, betroffene Commits aus der Historie entfernen
+   (neuer Stand, Force-Push nur mit Betreiber-Freigabe; die Tag-Rulesets verhindern das für
+   Tags, dafür braucht es eine befristete Ausnahme durch den Admin) und über den GitHub-Support
+   zwischengespeicherte Ansichten und PR-Refs entfernen lassen.
+4. Liste um den durchgerutschten Eintrag ergänzen (Abschnitt oben), vollständigen Scan
+   (`--repo --pr-text`) wiederholen, erst bei 0 Treffern wieder öffentlich.
+5. Den betroffenen Kunden nach Rücksprache mit dem Betreiber informieren.

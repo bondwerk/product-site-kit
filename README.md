@@ -23,3 +23,5 @@ Immer eine exakte Version, dazu `save-exact=true` in der `.npmrc` der Site. `ast
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,
 Identifikator-Scan, dann `npm publish --provenance` per Trusted Publishing. Kein Token.
 Das Paket enthält keine Kundendaten.
+
+Ablauf, Freigabe, Listenpflege und Rückweg bei einem Leck: [RELEASE.md](https://github.com/bondwerk/product-site-kit/blob/main/RELEASE.md).

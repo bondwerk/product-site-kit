@@ -20,4 +20,8 @@ describe('package.json des Kits', () => {
     expect(pkg.dependencies ?? {}).toEqual({});
     expect(Object.keys(pkg.scripts ?? {}).filter((s) => LEBENSZYKLUS.includes(s))).toEqual([]);
   });
+  it('typecheck prüft auch die Build-Konfiguration (sonst bleibt z. B. TS2742 in den d.ts unentdeckt)', () => {
+    expect(pkg.scripts.typecheck).toContain('tsc -p tsconfig.json');
+    expect(pkg.scripts.typecheck).toContain('tsc -p tsconfig.build.json --noEmit');
+  });
 });
