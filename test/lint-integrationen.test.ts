@@ -47,6 +47,18 @@ describe('contentLint', () => {
   });
 });
 
+describe('contentLint — eigene Domain ist kein Präfix-Freibrief', () => {
+  it('meldet fremde Domains und Mails, die mit der eigenen Domain beginnen, auch in Markdown-Links', async () => {
+    const schlecht = ['https://example.ch.ru/x', 'https://example.ch.evil.example/x', 'info@example.ch.ru',
+      '[hier](https://example.ch.ru/x)', '[hier](https://example.ch.evil.example/x)'];
+    const dateien: Record<string, string> = { 'content/de/seiten/gut.md': 'Mehr auf https://example.ch/x, [hier](https://example.ch/kurse) oder info@example.ch.' };
+    schlecht.forEach((b, i) => { dateien[`content/de/seiten/s${i}.md`] = `Mehr auf ${b}`; });
+    const fehler = await baue(contentLint({ eigeneAdressen: ['example.ch'] }), site(dateien));
+    schlecht.forEach((b, i) => expect(fehler.filter((f) => f.startsWith(`content/de/seiten/s${i}.md:`)), b).toHaveLength(1));
+    expect(fehler.filter((f) => f.startsWith('content/de/seiten/gut.md'))).toEqual([]);
+  });
+});
+
 describe('nurCollectionsLint', () => {
   it('bricht den Build, wenn src/ ein Datenmodul importiert', async () => {
     const wurzel = site({ 'src/pages/index.astro': "---\nimport { x } from '../i18n/content.ts';\n---\n<p>x</p>" });

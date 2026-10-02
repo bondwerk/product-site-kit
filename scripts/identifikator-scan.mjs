@@ -4,7 +4,7 @@
 //   node scripts/identifikator-scan.mjs --repo [--pr-text <datei>]
 //        — alle Dateien aus `git ls-files` (Inhalt und Pfad), jeder Commit aus `git rev-list --all`
 //          (Autor, Committer, Nachricht, Patch; mit geholten PR-Refs auch deren Commits), die
-//          Tag-Texte und optional ein PR-Text (Titel und Beschreibung bzw. `gh pr list --json`).
+//          alle Ref-Namen (Branches, Tags, Remotes) samt Tag-Texten und optional ein PR-Text (Titel und Beschreibung bzw. `gh pr list --json`).
 // Liste aus SITE_KIT_IDENTIFIKATOREN; leer = Exit 2 (fail-closed), Treffer = Exit 1. Die Ausgabe
 // nennt nur Fundort und Listennummer, nie die Trefferzeile und nie einen Pfad, der selbst einen
 // Eintrag enthält.
@@ -44,16 +44,31 @@ function tarballQuellen(tgz) {
   }
 }
 
+/** Dateien, die `git ls-files` nennt, aber nicht lesbar sind (Submodul, im Arbeitsbaum gelöscht). */
+const nichtLesbar = [];
+
+/** Liest eine Datei aus `git ls-files`; ein Lesefehler wird vermerkt statt geworfen (kein Stack, keine
+ *  Fehlermeldung mit Pfad in der Ausgabe). Ihr Pfad bleibt als Quelle im Scan. */
+function lesbar(p) {
+  try {
+    return lies(p);
+  } catch (e) {
+    nichtLesbar.push({ pfad: p, code: e?.code ?? 'Lesefehler' });
+    return '';
+  }
+}
+
 function repoQuellen(prText) {
   const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 });
-  const dateien = git('ls-files', '-z').split('\0').filter(Boolean).map((p) => ({ pfad: p, inhalt: lies(p) }));
+  const dateien = git('ls-files', '-z').split('\0').filter(Boolean).map((p) => ({ pfad: p, inhalt: lesbar(p) }));
   const commits = git('rev-list', '--all').split('\n').filter(Boolean).map((sha) => ({
     pfad: `commit ${sha}`,
     inhalt: git('show', '--no-color', '--no-ext-diff', '--no-textconv', '-m', '-p', '--format=%an%n%ae%n%cn%n%ce%n%B', sha),
   }));
-  const tags = [{ pfad: 'Tag-Texte', inhalt: git('for-each-ref', '--format=%(refname)%0a%(contents)', 'refs/tags') }];
+  // Alle Refs, nicht nur Tags: ein Branch- oder Remote-Name ist ebenso öffentlich wie ein Tag.
+  const refs = [{ pfad: 'Ref-Namen und Tag-Texte', inhalt: git('for-each-ref', '--format=%(refname)%0a%(contents)') }];
   const pr = prText === undefined ? [] : [{ pfad: 'PR-Text', inhalt: readFileSync(prText, 'utf8') }];
-  return [...dateien, ...commits, ...tags, ...pr];
+  return [...dateien, ...commits, ...refs, ...pr];
 }
 
 let quellen;
@@ -71,11 +86,13 @@ if (argv[0] === '--repo') {
   process.exit(2);
 }
 
+const nummer = (pfad) => quellen.findIndex((q) => q.pfad === pfad) + 1;
+for (const { pfad, code } of nichtLesbar) console.error(`Nicht lesbar: ${anzeige(pfad, nummer(pfad), liste)} (${code})`);
+
 const treffer = funde(quellen, liste);
 if (treffer.length) {
   for (const t of treffer) {
-    const nr = quellen.findIndex((q) => q.pfad === t.pfad) + 1;
-    console.error(`Treffer: ${anzeige(t.pfad, nr, liste)} (Listeneintrag #${t.eintrag})`);
+    console.error(`Treffer: ${anzeige(t.pfad, nummer(t.pfad), liste)} (Listeneintrag #${t.eintrag})`);
   }
   process.exit(1);
 }

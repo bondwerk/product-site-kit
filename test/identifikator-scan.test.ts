@@ -121,4 +121,29 @@ describe('identifikator-scan.mjs --repo', () => {
     writeFileSync(pr, 'Titel: Gerüst\n');
     expect(lauf(['--repo', '--pr-text', pr], 'muster-ag', repo).status).toBe(0);
   });
+  it('Treffer in einem Branch-Namen: Exit 1, Meldung nennt nur die Quelle, nicht den Ref-Namen', () => {
+    const { repo } = repoMitHistorie();
+    g(repo, 'branch', 'feature/muster-ag-anpassung');
+    const r = lauf(['--repo'], 'muster-ag', repo);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('Treffer: Ref-Namen und Tag-Texte (Listeneintrag #1)');
+    expect(r.stderr.toLowerCase()).not.toContain('muster-ag');
+  });
+  it('nicht lesbare Datei (im Index, im Arbeitsbaum gelöscht): Meldung über anzeige(), ohne Stack und ohne Pfad im Klartext', () => {
+    const { repo } = repoMitHistorie();
+    writeFileSync(join(repo, 'muster-ag.txt'), 'x\n');
+    writeFileSync(join(repo, 'weg.txt'), 'x\n');
+    g(repo, 'add', 'muster-ag.txt', 'weg.txt');
+    g(repo, 'commit', '-q', '-m', 'drei');
+    rmSync(join(repo, 'muster-ag.txt'));
+    rmSync(join(repo, 'weg.txt'));
+    const sauber = lauf(['--repo'], 'beispiel-ag', repo);
+    expect(sauber.status).toBe(0);
+    expect(sauber.stderr).toContain('Nicht lesbar: weg.txt (ENOENT)');
+    const r = lauf(['--repo'], 'muster-ag', repo);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/Nicht lesbar: Datei #\d+ \(ENOENT\)/);
+    expect(r.stderr.toLowerCase()).not.toContain('muster-ag');
+    expect(r.stderr).not.toMatch(/\n\s+at /);
+  });
 });

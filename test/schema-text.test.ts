@@ -21,6 +21,16 @@ describe('sichererText', () => {
       expect(t.safeParse(schlecht).success, schlecht).toBe(false);
     }
   });
+  it('eigene Domain gilt nicht als Präfix einer fremden Domain', () => {
+    const t = sichererTextFuer(['example.ch'])(200);
+    for (const schlecht of ['Mehr auf https://example.ch.ru/x', 'Mehr auf https://example.ch.evil.example/x', 'Schreib an info@example.ch.ru',
+      '[hier](https://example.ch.ru/x)', '[hier](https://example.ch.evil.example/x)']) {
+      expect(t.safeParse(schlecht).success, schlecht).toBe(false);
+    }
+    for (const gut of ['Mehr auf https://example.ch/x', 'Besuch uns auf example.ch.', 'Schreib an info@example.ch', '[hier](https://example.ch/kurse)']) {
+      expect(t.safeParse(gut).success, gut).toBe(true);
+    }
+  });
   it('eigene Adressen sind Daten, kein Muster: Regex-Zeichen werden escaped', () => {
     const t = sichererTextFuer(['info+kurs@example.ch'])(200);
     expect(t.safeParse('Schreib an info+kurs@example.ch').success).toBe(true);

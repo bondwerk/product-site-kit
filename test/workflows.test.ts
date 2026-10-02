@@ -75,4 +75,22 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
     expect(v).not.toMatch(/setup-node|actions\/checkout/);
     expect(r).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN/);
   });
+  it('Release: Publish prüft den sha512-integrity des Tarballs gegen die Ausgabe des Jobs paket, vor npm publish', () => {
+    const r = lies('release.yml');
+    const paket = job(r, 'paket');
+    const v = job(r, 'veroeffentlichen');
+    // paket rechnet den integrity des Tarballs aus und reicht ihn als Job-Output weiter.
+    expect(paket).toMatch(/outputs:\s*\n\s+integritaet: \$\{\{ steps\.integritaet\.outputs\.integritaet \}\}/);
+    expect(paket).toContain('id: integritaet');
+    expect(paket).toMatch(/openssl dgst -sha512 -binary/);
+    // veroeffentlichen rechnet auf dem heruntergeladenen Tarball neu und vergleicht, bevor publish läuft.
+    expect(v).toContain('ERWARTET: ${{ needs.paket.outputs.integritaet }}');
+    const vergleich = v.search(/test "\$IST" = "\$ERWARTET"/);
+    expect(vergleich).toBeGreaterThan(v.indexOf('actions/download-artifact@'));
+    expect(vergleich).toBeGreaterThan(v.search(/openssl dgst -sha512 -binary/));
+    expect(vergleich).toBeLessThan(v.indexOf('publish pack-ausgabe'));
+  });
+  it('Release: kein npm-Cache in den Release-Jobs', () => {
+    expect(lies('release.yml')).not.toMatch(/cache:\s*npm/);
+  });
 });

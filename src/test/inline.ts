@@ -1,7 +1,8 @@
 export type InlineArt = 'script' | 'handler' | 'style-block' | 'style-attr';
 
 const MUSTER: ReadonlyArray<readonly [InlineArt, RegExp]> = [
-  ['script', /<script\b(?![^>]*\bsrc\s*=)(?![^>]*\btype\s*=\s*["']?application\/ld\+json)[^>]*>/i],
+  // src/type nur als echte Attribute (Whitespace davor): data-src/data-type machen kein externes Script.
+  ['script', /<script\b(?![^>]*\ssrc\s*=)(?![^>]*\stype\s*=\s*["']?application\/ld\+json)[^>]*>/i],
   ['handler', /<[a-z][a-z0-9-]*\b[^>]*\son[a-z]+\s*=/i],
   ['style-block', /<style\b/i],
   ['style-attr', /<[a-z][a-z0-9-]*\b[^>]*\sstyle\s*=/i],

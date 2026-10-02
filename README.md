@@ -18,6 +18,15 @@ Immer eine exakte Version, dazu `save-exact=true` in der `.npmrc` der Site. `ast
 | `@bondwerk/site-kit/integrationen` | Astro-Integrationen und Sanitizer | Build |
 | `@bondwerk/site-kit/test` | Testhelfer (Inline-Code, Symlinks) | nur Tests |
 
+### Sanitizer und externe Links
+
+`rehypeExterneLinks` läuft **nach** `rehype-sanitize`:
+
+    rehypePlugins: [[rehypeSanitize, sanitizeSchema], rehypeExterneLinks]
+
+Das `defaultSchema` von rehype-sanitize entfernt `target` und `rel`. In umgekehrter Reihenfolge
+fehlen beide Attribute im Ergebnis, ohne Fehlermeldung.
+
 ## Veröffentlichung
 
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,

@@ -1,17 +1,25 @@
 /** Import-Spezifizierer, die auf ein hartcodiertes Datenmodul statt auf eine Collection deuten. */
-const VERBOTENES_MUSTER = /(^|\/)(i18n\/)?(content|settlements|daten|data)(\.ts|\.js)?$/i;
+const VERBOTENES_MUSTER = /(^|\/)(i18n\/)?(content|eintraege|daten|data)(\.ts|\.js)?$/i;
 const ERLAUBTE_DATEIEN = new Set(['src/content.config.ts']);
 
 export interface LintTreffer { datei: string; zeile: number; specifier: string }
 
+// Über den ganzen Text statt zeilenweise: statische Imports (auch mehrzeilig), dynamisches import()
+// und Re-Exports mit `export … from`. Genau eine der drei Gruppen trägt den Spezifizierer.
+const IMPORT_MUSTER = new RegExp([
+  String.raw`\bimport\s+(?:[^'"]*?\bfrom\s*)?['"]([^'"\n]+)['"]`,
+  String.raw`\bimport\s*\(\s*['"]([^'"\n]+)['"]`,
+  String.raw`\bexport\s+(?:type\s+)?(?:\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s*from\s*['"]([^'"\n]+)['"]`,
+].join('|'), 'g');
+
 function importSpecifiers(quelle: string): { specifier: string; zeile: number }[] {
   const treffer: { specifier: string; zeile: number }[] = [];
-  const muster = /\bimport\s+(?:[^'"]*?from\s+)?['"]([^'"]+)['"]/g;
-  quelle.split(/\r?\n/).forEach((zeile, i) => {
-    muster.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = muster.exec(zeile))) treffer.push({ specifier: m[1]!, zeile: i + 1 });
-  });
+  for (const m of quelle.matchAll(IMPORT_MUSTER)) {
+    const specifier = (m[1] ?? m[2] ?? m[3])!;
+    // Zeile des Spezifizierers selbst: er steht am Ende des Treffers, direkt vor dem schliessenden Quote.
+    const offset = m.index + m[0].length - 1 - specifier.length;
+    treffer.push({ specifier, zeile: quelle.slice(0, offset).split('\n').length });
+  }
   return treffer;
 }
 

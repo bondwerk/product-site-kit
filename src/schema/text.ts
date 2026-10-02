@@ -15,10 +15,14 @@ export const EMAIL_ADRESSE = /\b[^\s@]+@[^\s@]+\.[a-z]{2,}\b/i;
 
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
-/** Entfernt die eigenen Adressen (mit optionalem Präfix, nur an Wortgrenzen) aus einer Zeile. */
+/**
+ * Entfernt die eigenen Adressen (mit optionalem Präfix, nur an Wortgrenzen) aus einer Zeile.
+ * Ein Punkt mit Folgezeichen nach der Adresse gehört zu einer fremden Domain (`example.ch.ru`), ein
+ * Satzpunkt am Ende (`… example.ch.`) nicht.
+ */
 export function ohneAdressen(zeile: string, adressen: readonly string[]): string {
   return adressen.reduce((z, a) => {
-    const muster = new RegExp(String.raw`(?<![\w.-])(?:https?://|mailto:)?(?:www\.)?${escapeRegex(a)}(?![\w-])`, 'gi');
+    const muster = new RegExp(String.raw`(?<![\w.-])(?:https?://|mailto:)?(?:www\.)?${escapeRegex(a)}(?!\.?[\w-])`, 'gi');
     return z.replace(muster, '');
   }, zeile);
 }

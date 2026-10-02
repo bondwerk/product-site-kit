@@ -6,8 +6,10 @@
 2. Tag `vX.Y.Z` auf dem Merge-Commit pushen. Nur Admins dürfen `v*`-Tags anlegen; kein Tag lässt
    sich löschen, verschieben oder überschreiben (Rulesets `release-tags-anlegen` und
    `release-tags-unveraenderlich`).
-3. Workflow „Release": `paket` baut und packt, `pruefen` testet und scannt genau diesen Tarball,
-   `veroeffentlichen` wartet im Environment `npm-release` auf die Freigabe.
+3. Workflow „Release": `paket` baut und packt und gibt den `integrity` (sha512) des Tarballs als
+   Job-Output weiter, `pruefen` testet und scannt genau diesen Tarball, `veroeffentlichen` wartet im
+   Environment `npm-release` auf die Freigabe, rechnet den `integrity` des heruntergeladenen
+   Tarballs neu und bricht bei Abweichung vor `npm publish` ab.
 4. Freigabe durch den Betreiber (Selbstfreigabe, ein Reviewer). Die Kontrolle gegen eine bösartige
    Version liegt im bewussten Pin pro Site: keine Site übernimmt eine Version ohne `kit-bump`, PR
    und neuen `kitVersion`-Pin.
@@ -19,9 +21,10 @@ entsprechend `npx npm@11 …`.
 
 ## Sichtbarkeit
 
-Das Repo war bis zum ersten Release privat. Vor dem Umschalten auf öffentlich hat der Betreiber
-Code, ganze Historie, PR-Refs, Tag-Texte und alle PR-Texte gegen die Identifikator-Liste gescannt
-(Ergebnis 0 Treffer). Die CI scannt seither jeden Push und jeden PR.
+Das Repo ist bis zum ersten Release privat. Vor dem Umschalten auf öffentlich scannt der Betreiber
+Code, ganze Historie, PR-Refs, alle Ref-Namen samt Tag-Texten und alle PR-Texte gegen die
+Identifikator-Liste. Erwartetes Ergebnis: 0 Treffer; das tatsächliche Ergebnis wird in Task 1.18
+festgehalten. Ab dem Umschalten scannt die CI jeden Push und jeden PR.
 
 ## Identifikator-Liste
 

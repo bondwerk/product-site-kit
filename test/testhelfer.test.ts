@@ -22,6 +22,17 @@ describe('inlineBefunde', () => {
   });
 });
 
+describe('inlineBefunde — src/type nur als echte Attribute', () => {
+  it('data-src macht ein Inline-Script nicht zum externen Script', () => {
+    expect(inlineBefunde('<script data-src="x">alert(1)</script>')).toEqual(['script']);
+    expect(inlineBefunde('<script\nsrc="/_astro/a.js"></script>')).toEqual([]);
+  });
+  it('data-type="application/ld+json" macht ein Inline-Script nicht zu JSON-LD', () => {
+    expect(inlineBefunde('<script data-type="application/ld+json">alert(1)</script>')).toEqual(['script']);
+    expect(inlineBefunde('<script\ttype="application/ld+json">{}</script>')).toEqual([]);
+  });
+});
+
 describe('symlinkEintraege', () => {
   it('liefert Pfade mit Git-Modus 120000 aus dem Index', () => {
     const repo = mkdtempSync(join(tmpdir(), 'kit-symlink-'));
