@@ -1,0 +1,46 @@
+name: CI
+permissions:
+  contents: read
+on:
+  push: { branches: [main] }
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 22, cache: npm }
+      # npm 10 bricht auf diesem Lockfile ab (edgesOut); npm 11 exakt gepinnt.
+      - run: npm install -g npm@11.19.1
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
+      - run: node scripts/pack-pruefung.mjs --zweimal
+      # Blockierend auf jedem Push und PR (Council P1), sobald das Geheimnis gesetzt ist. Ohne
+      # Geheimnis (vor dem ersten Setzen, Fork-PRs) nur ein Hinweis; der Release-Workflow scheitert
+      # in diesem Fall (release.yml, Job pruefen) und scannt Repo samt PR-Refs vor jedem Publish.
+      - name: Identifikator-Scan Tarball (F8)
+        env:
+          SITE_KIT_IDENTIFIKATOREN: ${{ secrets.SITE_KIT_IDENTIFIKATOREN }}
+        run: |
+          if [ -z "$SITE_KIT_IDENTIFIKATOREN" ]; then
+            echo "::notice::SITE_KIT_IDENTIFIKATOREN nicht gesetzt — Identifikator-Scan übersprungen (Release scheitert ohne)."
+            exit 0
+          fi
+          node scripts/identifikator-scan.mjs pack-ausgabe/*.tgz
+      - name: Identifikator-Scan Repo, Historie und PR-Text (P1)
+        env:
+          SITE_KIT_IDENTIFIKATOREN: ${{ secrets.SITE_KIT_IDENTIFIKATOREN }}
+          PR_TITEL: ${{ github.event.pull_request.title }}
+          PR_TEXT: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$SITE_KIT_IDENTIFIKATOREN" ]; then
+            echo "::notice::SITE_KIT_IDENTIFIKATOREN nicht gesetzt — Identifikator-Scan übersprungen (Release scheitert ohne)."
+            exit 0
+          fi
+          git fetch --no-tags origin '+refs/pull/*:refs/remotes/pull/*'
+          printf '%s\n%s\n' "$PR_TITEL" "$PR_TEXT" > "$RUNNER_TEMP/pr-text.txt"
+          node scripts/identifikator-scan.mjs --repo --pr-text "$RUNNER_TEMP/pr-text.txt"
