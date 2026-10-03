@@ -34,4 +34,10 @@ describe('Exporte über package.json erreichbar', () => {
       expect(existsSync(new URL(`../${pkg.exports[`./${subpath}`].types}`, import.meta.url)), 'Typen-Datei').toBe(true);
     });
   }
+
+  it('Komponenten und Stile liegen unter den Wildcard-Exporten im gebauten dist/', () => {
+    for (const p of ['komponenten/Abschnitte.astro', 'stile/kit.css', 'stile/palette.vorlage.css']) {
+      expect(existsSync(new URL(`../dist/${p}`, import.meta.url)), p).toBe(true);
+    }
+  });
 });
