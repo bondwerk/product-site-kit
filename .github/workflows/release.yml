@@ -82,4 +82,9 @@ jobs:
           IST="sha512-$(openssl dgst -sha512 -binary "$1" | base64 -w0)"
           test "$IST" = "$ERWARTET" || { echo "::error::integrity weicht ab: $IST ≠ $ERWARTET"; exit 1; }
       - name: Veröffentlichen (OIDC, kein Token)
-        run: npx --yes npm@11.19.1 publish pack-ausgabe/*.tgz --provenance --access public
+        # Pfad mit ./ : ohne liest npm `pack-ausgabe/x.tgz` als GitHub-Kurzform (Vorfall v0.1.0).
+        run: |
+          set -- ./pack-ausgabe/*.tgz
+          test "$#" -eq 1 && test -f "$1" || { echo "::error::erwartet genau einen Tarball in pack-ausgabe/"; exit 1; }
+          TARBALL="$1"
+          npx --yes npm@11.19.1 publish "$TARBALL" --provenance --access public
