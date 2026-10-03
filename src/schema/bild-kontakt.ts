@@ -4,7 +4,8 @@ import { z } from 'astro/zod';
 export const contentBildPfad = z
   .string()
   .regex(/^bilder\/(?!.*\.\.)[a-z0-9äöü/._-]+\.(webp|png|jpe?g|avif)$/i, 'Rasterbild unter bilder/ erwartet (kein SVG)')
-  .refine((v) => !v.includes('..'), { message: 'Pfad-Ausbruch' });
+  .refine((v) => !v.includes('..'), { message: 'Pfad-Ausbruch' })
+  .meta({ 'x-klasse': 'inhalt' });
 
 /** Schweizer PLZ, vierstellig. */
 export const plz = z.string().regex(/^\d{4}$/, 'CH-PLZ (4-stellig) erwartet');

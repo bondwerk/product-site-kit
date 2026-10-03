@@ -31,7 +31,8 @@ export function ohneAdressen(zeile: string, adressen: readonly string[]): string
 export const sichererTextFuer = (adressen: readonly string[]) => (max: number, min = 1) =>
   z.string().min(min).max(max)
     .refine((v) => v === '' || !URL_ODER_SCHEME.test(ohneAdressen(v, adressen)), { message: 'Keine URLs oder Links in Textfeldern' })
-    .refine((v) => !EMAIL_ADRESSE.test(ohneAdressen(v, adressen)), { message: 'E-Mail-Adressen gehören in die Kontaktdaten' });
+    .refine((v) => !EMAIL_ADRESSE.test(ohneAdressen(v, adressen)), { message: 'E-Mail-Adressen gehören in die Kontaktdaten' })
+    .meta({ 'x-klasse': 'inhalt' });
 
 /** Textfeld ohne jede URL und E-Mail (Site ohne eigene Adressen). */
 export const sichererText = sichererTextFuer([]);
