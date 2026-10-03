@@ -31,6 +31,7 @@ describe('alsJsonSchemaAus mit Gestaltung', () => {
     expect(d['x-wert-label']).toEqual({ klein: 'klein', normal: 'normal', gross: 'gross' });
     expect(s.$defs['gestaltung-sichtbar']).toMatchObject({ type: 'boolean', 'x-normalwert': true, 'x-wert-label': { true: 'eingeblendet', false: 'ausgeblendet' },
       'x-ersatz': kundenwoerter.sichtbar.ersatz });
+    expect(s.$defs['gestaltung-sichtbar']['x-ersatz']).toEqual([expect.objectContaining({ art: 'rueckfrage', stufe: 2 })]);
   });
   it('bildposition: $ref plus x-normalwert je Variante (bildText links, karten oben)', () => {
     const v = Object.fromEntries(zweige(js.seiten!).map((z) => [z.properties.variante.const, z]));

@@ -43,7 +43,7 @@ describe('Gestaltung als Daten (Spec §6.1, §6.2)', () => {
   });
   it('O6: „entfernen", „weg", „raus" blenden nicht aus, sondern lösen eine Rückfrage aus', () => {
     expect(kundenwoerter.sichtbar.werte.false!.kundenwoerter).toEqual(['ausblenden', 'vorerst ausblenden']);
-    expect(kundenwoerter.sichtbar.ersatz).toEqual([{ kundenwoerter: ['entfernen', 'weg', 'raus'], art: 'rueckfrage',
+    expect(kundenwoerter.sichtbar.ersatz).toEqual([{ kundenwoerter: ['entfernen', 'weg', 'raus'], art: 'rueckfrage', stufe: 2,
       satz: 'Ausgeblendet ist nicht gelöscht — soll der Inhalt endgültig entfernt werden? Bitte bestätigen.' }]);
     expect(beschreibung('sichtbar')).toContain('Ausgeblendet ist nicht gelöscht');
     expect(beschreibung('sichtbar')).toContain('„entfernen“');

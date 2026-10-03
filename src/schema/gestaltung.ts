@@ -19,7 +19,7 @@ interface WertEintrag { readonly label: string; readonly wirkung: string; readon
 /** F3: Ersatz setzt einen anderen Wert; O6: Rückfrage setzt keinen Wert, die Freigabe fragt nach (S4: Löschung, Stufe ≥ 2). */
 type Ersatz =
   | { readonly kundenwoerter: readonly string[]; readonly art: 'ersatz'; readonly wert: string; readonly satz: string }
-  | { readonly kundenwoerter: readonly string[]; readonly art: 'rueckfrage'; readonly satz: string };
+  | { readonly kundenwoerter: readonly string[]; readonly art: 'rueckfrage'; readonly stufe: 2; readonly satz: string };
 interface FeldEintrag { readonly label: string; readonly werte: Readonly<Record<string, WertEintrag>>; readonly ersatz: readonly Ersatz[] }
 const w = (label: string, wirkung: string, ...kundenwoerter: string[]): WertEintrag => ({ label, wirkung, kundenwoerter });
 
@@ -55,7 +55,7 @@ export const kundenwoerter: Readonly<Record<Gestaltungsfeld, FeldEintrag>> = {
   sichtbar: { label: 'Sichtbarkeit', werte: {
     true: w('eingeblendet', 'der Abschnitt erscheint auf der Seite'),
     false: w('ausgeblendet', 'der Abschnitt erscheint nicht, der Inhalt bleibt in der Datei', 'ausblenden', 'vorerst ausblenden') },
-    ersatz: [{ kundenwoerter: ['entfernen', 'weg', 'raus'], art: 'rueckfrage', satz: 'Ausgeblendet ist nicht gelöscht — soll der Inhalt endgültig entfernt werden? Bitte bestätigen.' }] },
+    ersatz: [{ kundenwoerter: ['entfernen', 'weg', 'raus'], art: 'rueckfrage', stufe: 2, satz: 'Ausgeblendet ist nicht gelöscht — soll der Inhalt endgültig entfernt werden? Bitte bestätigen.' }] },
 };
 
 const zitat = (ws: readonly string[]) => ws.map((x) => `„${x}“`).join(', ');
