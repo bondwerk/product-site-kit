@@ -11,12 +11,17 @@ describe('package.json des Kits', () => {
   it('Name, Repo, Exporte, files, peers und keine Lebenszyklus-Skripte', () => {
     expect(pkg.name).toBe('@bondwerk/site-kit');
     expect(pkg.repository).toEqual({ type: 'git', url: 'git+https://github.com/bondwerk/product-site-kit.git' });
-    expect(Object.keys(pkg.exports).sort()).toEqual([...SUBPATHS.map((s) => `./${s}`), './package.json'].sort());
+    expect(Object.keys(pkg.exports).sort()).toEqual([...SUBPATHS.map((s) => `./${s}`), './komponenten/*', './package.json', './stile/*'].sort());
     for (const s of SUBPATHS) {
       expect(pkg.exports[`./${s}`], s).toEqual({ types: `./dist/${s}/index.d.ts`, default: `./dist/${s}/index.js` });
     }
-    expect(pkg.files).toEqual(['dist/**/*.js', 'dist/**/*.d.ts', 'README.md', 'LICENSE']);
-    expect(pkg.peerDependencies).toEqual({ astro: '^7.0.6', zod: '^4.3.6', 'rehype-sanitize': '^6.0.0' });
+    expect(pkg.exports['./komponenten/*']).toBe('./dist/komponenten/*');
+    expect(pkg.exports['./stile/*']).toBe('./dist/stile/*');
+    expect(pkg.files).toEqual(['dist/**/*.js', 'dist/**/*.d.ts', 'dist/**/*.astro', 'dist/**/*.css', 'README.md', 'LICENSE']);
+    expect(pkg.peerDependencies).toEqual({ astro: '^7.2.8', zod: '^4.3.6', 'rehype-sanitize': '^6.0.0' });
+    expect(pkg.sideEffects).toEqual(['**/*.css']);
+    expect(pkg.scripts.build).toBe('tsc -p tsconfig.build.json && node scripts/kopiere-quellen.mjs');
+    expect(pkg.devDependencies.astro).toBe('7.2.8');
     expect(pkg.dependencies ?? {}).toEqual({});
     expect(Object.keys(pkg.scripts ?? {}).filter((s) => LEBENSZYKLUS.includes(s))).toEqual([]);
   });

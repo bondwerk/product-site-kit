@@ -1,10 +1,10 @@
 // Verdrahtungs-Wache (Spec #435 §4.2, Plan A1): jeder Baustein ist über den Paketnamen und die
 // `exports` des Manifests erreichbar, so wie ein Konsument ihn lädt — gebautes JavaScript aus dist/,
 // geladen von Node ohne Vite-Transform (Self-Reference auf `@bondwerk/site-kit/<subpath>`).
-import { beforeAll, describe, expect, it } from 'vitest';
+// dist/ baut test/global-setup.ts genau einmal vor allen Testdateien (Plan #435 S2, Task 2.1).
+import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const wurzel = fileURLToPath(new URL('..', import.meta.url));
@@ -28,12 +28,6 @@ function exporteUeberPaketnamen(subpath: string): string[] {
 }
 
 describe('Exporte über package.json erreichbar', () => {
-  beforeAll(() => {
-    rmSync(new URL('../dist', import.meta.url), { recursive: true, force: true });
-    const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');
-    execFileSync(process.execPath, [tsc, '-p', 'tsconfig.build.json'], { cwd: wurzel, stdio: 'pipe' });
-  }, 120_000);
-
   for (const [subpath, namen] of Object.entries(ERWARTET)) {
     it(`@bondwerk/site-kit/${subpath} lädt aus dist/ und exportiert genau die geplanten Namen`, () => {
       expect(exporteUeberPaketnamen(subpath)).toEqual([...namen].sort());

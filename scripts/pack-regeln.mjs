@@ -1,5 +1,6 @@
 // Reine Prüffunktionen der Release-CI (Spec #435 §11.4). Nicht im Paket (files-Allowlist).
-export const ERLAUBTE_PFADE = [/^package\.json$/, /^README\.md$/, /^LICENSE$/, /^dist\/[a-z0-9/_-]+\.(js|d\.ts)$/];
+export const ERLAUBTE_PFADE = [/^package\.json$/, /^README\.md$/, /^LICENSE$/, /^dist\/[a-z0-9/_-]+\.(js|d\.ts)$/,
+  /^dist\/komponenten\/(?:[a-z]+\/)?[A-Z][A-Za-z]+\.astro$/, /^dist\/stile\/[a-z.]+\.css$/];
 export const LEBENSZYKLUS = ['preinstall', 'install', 'postinstall', 'prepublish', 'preprepare', 'prepare', 'postprepare',
   'prepublishOnly', 'prepack', 'postpack', 'publish', 'postpublish'];
 
