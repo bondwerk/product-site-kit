@@ -68,12 +68,30 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
   it('Release: Publish-Job nach beiden, OIDC ohne Token, Provenance, ohne setup-node und ohne Checkout', () => {
     const r = lies('release.yml');
     const v = job(r, 'veroeffentlichen');
-    expect(v).toContain('needs: [paket, pruefen]');
+    expect(v).toContain('needs: [paket, pruefen, versionen]');
     expect(v).toContain('environment: npm-release');
     expect(v).toContain('id-token: write');
     expect(v).toMatch(/npx --yes npm@11\.\d+\.\d+ publish "\$TARBALL" --provenance --access public/);
     expect(v).not.toMatch(/setup-node|actions\/checkout/);
     expect(r).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN/);
+  });
+  it('Versions-Test als eigener Job ohne Secrets und ohne id-token, in CI und Release (Plan B12)', () => {
+    const ci = lies('ci.yml');
+    const r = lies('release.yml');
+    for (const [name, text] of [['ci.yml', job(ci, 'versionen')], ['release.yml', job(r, 'versionen')]] as const) {
+      expect(text, name).toContain('- run: node scripts/versions-test.mjs');
+      expect(text.indexOf('- run: npm run build'), name).toBeGreaterThanOrEqual(0);
+      expect(text.indexOf('- run: npm run build'), name).toBeLessThan(text.indexOf('versions-test.mjs'));
+      expect(text.search(NPM11), name).toBeGreaterThanOrEqual(0);
+      expect(text, name).not.toMatch(/secrets\.|id-token|npm view|cache:\s*npm/);
+    }
+    expect(job(ci, 'pruefen')).not.toContain('versions-test.mjs');
+    expect(job(r, 'pruefen')).not.toContain('versions-test.mjs');
+  });
+  it('CI läuft auf push aller Branches und auf PRs (Council 2026-10-03)', () => {
+    const ci = lies('ci.yml');
+    expect(ci).toContain("  push: { branches: ['**'] }\n");
+    expect(ci).not.toContain('branches: [main]');
   });
   it('Release: Publish prüft den sha512-integrity des Tarballs gegen die Ausgabe des Jobs paket, vor npm publish', () => {
     const r = lies('release.yml');

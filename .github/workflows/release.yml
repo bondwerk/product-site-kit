@@ -59,10 +59,23 @@ jobs:
         run: |
           git fetch --no-tags origin '+refs/pull/*:refs/remotes/pull/*'
           node scripts/identifikator-scan.mjs --repo
+  # Versions-Test (Plan B12): lädt Code der Basisversion aus der Registry, deshalb eigener Job ohne Secrets und ohne id-token.
+  versionen:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 22 }
+      - run: npm install -g npm@11.19.1
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: node scripts/versions-test.mjs
   # Kein Checkout, kein setup-node: der Job sieht nur den geprüften Tarball. npm 11 kommt
   # exakt gepinnt über npx (Trusted Publishing braucht npm >= 11.5.1).
   veroeffentlichen:
-    needs: [paket, pruefen]
+    needs: [paket, pruefen, versionen]
     runs-on: ubuntu-latest
     environment: npm-release
     permissions:
