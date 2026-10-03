@@ -1,0 +1,18 @@
+/* @bondwerk/site-kit — Vorlage für src/styles/palette.css (Spec #435 §7.1). Nur :root, nur --pal-*: #rrggbb.
+   Knopf-Tokens je Fläche sind optional: ohne sie zeigt der Knopf das umgekehrte Flächenpaar. */
+:root {
+  --pal-seite-bg: #ffffff;
+  --pal-seite-text: #1a1a1a;
+  --pal-seite-link: #0b5cad;
+  --pal-hell-bg: #f3f4f6;
+  --pal-hell-text: #1a1a1a;
+  --pal-hell-link: #0b5cad;
+  --pal-akzent-bg: #0b5cad;
+  --pal-akzent-text: #ffffff;
+  --pal-akzent-link: #ffffff;
+  --pal-dunkel-bg: #1a1a1a;
+  --pal-dunkel-text: #ffffff;
+  --pal-dunkel-link: #9ecbff;
+  --pal-akzentlinie: #0b5cad;
+  --pal-rahmen: #6b7280;
+}
