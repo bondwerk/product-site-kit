@@ -19,6 +19,10 @@
 CI und Release arbeiten mit npm 11, exakt gepinnt (npm 10 bricht auf dem Lockfile ab). Lokal
 entsprechend `npx npm@11 …`.
 
+## Versionen
+
+- v0.1.0: Tag gesetzt, Veröffentlichung am Pfad-Fehler gescheitert, nie auf npm; erste veröffentlichte Version ist 0.1.1.
+
 ## Sichtbarkeit
 
 Das Repo ist bis zum ersten Release privat. Vor dem Umschalten auf öffentlich scannt der Betreiber

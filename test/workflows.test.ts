@@ -71,7 +71,7 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
     expect(v).toContain('needs: [paket, pruefen]');
     expect(v).toContain('environment: npm-release');
     expect(v).toContain('id-token: write');
-    expect(v).toMatch(/npx --yes npm@11\.\d+\.\d+ publish pack-ausgabe\/\*\.tgz --provenance --access public/);
+    expect(v).toMatch(/npx --yes npm@11\.\d+\.\d+ publish "\$TARBALL" --provenance --access public/);
     expect(v).not.toMatch(/setup-node|actions\/checkout/);
     expect(r).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN/);
   });
@@ -88,7 +88,30 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
     const vergleich = v.search(/test "\$IST" = "\$ERWARTET"/);
     expect(vergleich).toBeGreaterThan(v.indexOf('actions/download-artifact@'));
     expect(vergleich).toBeGreaterThan(v.search(/openssl dgst -sha512 -binary/));
-    expect(vergleich).toBeLessThan(v.indexOf('publish pack-ausgabe'));
+    expect(vergleich).toBeLessThan(v.search(/npm@11\.\d+\.\d+ publish /));
+  });
+  // Vorfall v0.1.0: `npm publish pack-ausgabe/x.tgz` las npm als GitHub-Kurzform (owner/repo) und
+  // versuchte `git ls-remote ssh://git@github.com/pack-ausgabe/…`. Nur `./…` oder ein absoluter Pfad
+  // ist für npm eindeutig eine lokale Datei.
+  it('Release: npm publish bekommt den Tarball als eindeutigen lokalen Pfad (./ oder absolut), genau eine Datei', () => {
+    const job_ = job(lies('release.yml'), 'veroeffentlichen');
+    // Nur der Schritt mit dem publish-Aufruf zählt, nicht etwa der integrity-Schritt davor.
+    const v = job_.slice(job_.lastIndexOf('- name:', job_.search(/npm@11\.\d+\.\d+ publish /)));
+    const publish = v.match(/npx --yes npm@11\.\d+\.\d+ publish (\S+)/);
+    expect(publish, 'publish-Aufruf').not.toBeNull();
+    let pfad = publish![1]!;
+    const variable = pfad.match(/^"?\$\{?([A-Z_]+)\}?"?$/);
+    if (variable) {
+      // Variable zurückverfolgen: VAR="$1" aus `set -- <glob>`, mit Prüfung auf genau einen Treffer.
+      expect(v).toMatch(new RegExp(`^\\s*${variable[1]}="\\$1"\\s*$`, 'm'));
+      const satz = v.match(/^\s*set -- (\S+)\s*$/m);
+      expect(satz, 'set -- <glob>').not.toBeNull();
+      pfad = satz![1]!;
+      expect(v).toContain('test "$#" -eq 1');
+      expect(v).toContain('test -f "$1"');
+    }
+    expect(pfad).toContain('pack-ausgabe/');
+    expect(pfad).toMatch(/^(\.\/|\/)/);
   });
   it('Release: kein npm-Cache in den Release-Jobs', () => {
     expect(lies('release.yml')).not.toMatch(/cache:\s*npm/);
