@@ -3,7 +3,7 @@ import { z } from 'astro/zod';
 import { sichererText } from './text.js';
 import { contentBildPfad } from './bild-kontakt.js';
 import { linkZiel } from './link.js';
-import { gestaltungsfelder, stufen } from './gestaltung.js';
+import { gestaltungsfelder, bildpositionFeld } from './gestaltung.js';
 
 /** Vom System vergeben (§6.4): `a-` und 10 Zeichen a-z/0-9. Der Agent ändert sie nie. */
 export const abschnittId = z.string().regex(/^a-[a-z0-9]{10}$/, 'Abschnitts-ID: a- und 10 Zeichen a-z/0-9');
@@ -17,12 +17,9 @@ const basis = {
   ...gestaltungsfelder,
 };
 
-/** Markierung für alsJsonSchemaAus (B5); wird dort wieder entfernt. */
-export const VARIANTEN_MARKER = 'x-kit-variante';
 const variante = <N extends string, F extends z.ZodRawShape>(name: N, felder: F) =>
-  z.object({ variante: z.literal(name), ...basis, ...felder }).strict().meta({ [VARIANTEN_MARKER]: name });
+  z.object({ variante: z.literal(name), ...basis, ...felder }).strict();
 
-const bildposition = z.enum(stufen.bildposition).optional();
 const karte = z.object({
   titel: sichererText(80), text: sichererText(400).optional(),
   bild: contentBildPfad.optional(), bildAlt: sichererText(160).optional(),
@@ -33,9 +30,9 @@ const karte = z.object({
 
 export const varianten = {
   text: variante('text', { absaetze: z.array(sichererText(1200)).min(1).max(20) }),
-  bildText: variante('bildText', { bildposition, bild: contentBildPfad, bildAlt: sichererText(160), absaetze: z.array(sichererText(1200)).max(20) }),
+  bildText: variante('bildText', { bildposition: bildpositionFeld('bildText'), bild: contentBildPfad, bildAlt: sichererText(160), absaetze: z.array(sichererText(1200)).max(20) }),
   faq: variante('faq', { fragen: z.array(z.object({ frage: sichererText(200), antwort: sichererText(1200) }).strict()).min(1).max(30) }),
-  karten: variante('karten', { bildposition, karten: z.array(karte).min(1).max(12) }),
+  karten: variante('karten', { bildposition: bildpositionFeld('karten'), karten: z.array(karte).min(1).max(12) }),
   ctaBand: variante('ctaBand', { text: sichererText(200).optional(), knopf: z.object({ label: sichererText(40), ziel: linkZiel }).strict() }),
 } as const;
 export type KitVariante = keyof typeof varianten;

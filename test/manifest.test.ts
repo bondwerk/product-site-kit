@@ -1,6 +1,7 @@
 // Spec #435 §4.1, §4.2, §9.2 und Plan A1/A6: das Manifest ist die Grenze des öffentlichen Pakets.
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { KIT_VERSION, GESTALTUNG_KENNUNG } from '../src/schema/version.js';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as Record<string, any>;
 const LEBENSZYKLUS = ['preinstall', 'install', 'postinstall', 'prepublish', 'preprepare', 'prepare', 'postprepare',
@@ -28,5 +29,12 @@ describe('package.json des Kits', () => {
   it('typecheck prüft auch die Build-Konfiguration (sonst bleibt z. B. TS2742 in den d.ts unentdeckt)', () => {
     expect(pkg.scripts.typecheck).toContain('tsc -p tsconfig.json');
     expect(pkg.scripts.typecheck).toContain('tsc -p tsconfig.build.json --noEmit');
+  });
+});
+describe('KIT_VERSION', () => {
+  it('gleich der Paketversion; Kennung x-gestaltung = Major.Minor (Spec §8.1, B3)', () => {
+    expect(KIT_VERSION).toBe(pkg.version);
+    expect(GESTALTUNG_KENNUNG).toMatch(/^\d+\.\d+$/);
+    expect(pkg.version.startsWith(`${GESTALTUNG_KENNUNG}.`)).toBe(true);
   });
 });

@@ -73,13 +73,32 @@ export function beschreibung(feld: Gestaltungsfeld): string {
   return `${e.label}. Werte: ${werte}. Feld weglassen = ${normal}.${ersatz}`;
 }
 
+/** Weg A (B5): Metadaten eines Gestaltungsfelds aus der Tabelle. zod hebt ein Schema mit `id` nach $defs und setzt $ref. */
+export function defMeta(feld: Gestaltungsfeld) {
+  const e = kundenwoerter[feld];
+  return {
+    id: `gestaltung-${feld}`,
+    description: beschreibung(feld),
+    'x-label': e.label,
+    'x-wert-label': Object.fromEntries(Object.entries(e.werte).map(([w, x]) => [w, x.label])),
+    'x-gestaltungsstufe': 1,
+    ...(feld === 'bildposition' ? {} : { 'x-normalwert': normalwerte[feld] }),
+    ...(e.ersatz.length ? { 'x-ersatz': e.ersatz } : {}),
+  };
+}
+
 /** Gestaltungsfelder eines Abschnitts (§6.1): alle .optional(), nie .default() (Nullwert = kein Byte). */
 export const gestaltungsfelder = {
-  breite: z.enum(stufen.breite).optional(),
-  betonung: z.enum(stufen.betonung).optional(),
-  farbe: z.enum(stufen.farbe).optional(),
-  titelgroesse: z.enum(stufen.titelgroesse).optional(),
-  ausrichtung: z.enum(stufen.ausrichtung).optional(),
-  abstand: z.enum(stufen.abstand).optional(),
-  sichtbar: z.boolean().optional(),
+  breite: z.enum(stufen.breite).meta(defMeta('breite')).optional(),
+  betonung: z.enum(stufen.betonung).meta(defMeta('betonung')).optional(),
+  farbe: z.enum(stufen.farbe).meta(defMeta('farbe')).optional(),
+  titelgroesse: z.enum(stufen.titelgroesse).meta(defMeta('titelgroesse')).optional(),
+  ausrichtung: z.enum(stufen.ausrichtung).meta(defMeta('ausrichtung')).optional(),
+  abstand: z.enum(stufen.abstand).meta(defMeta('abstand')).optional(),
+  sichtbar: z.boolean().meta(defMeta('sichtbar')).optional(),
 } as const;
+
+/** bildposition: eine Def, der Normalwert je Variante sitzt an der .optional()-Hülle (§6.1). */
+const bildpositionDef = z.enum(stufen.bildposition).meta(defMeta('bildposition'));
+export const bildpositionFeld = (variante: 'bildText' | 'karten') =>
+  bildpositionDef.optional().meta({ 'x-normalwert': bildpositionNormal[variante] });
