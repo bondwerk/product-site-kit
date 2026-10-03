@@ -20,6 +20,9 @@ Immer eine exakte Version, dazu `save-exact=true` in der `.npmrc` der Site. `ast
 | `@bondwerk/site-kit/komponenten/Abschnitte.astro` | rendert `abschnitte` | Build |
 | `@bondwerk/site-kit/stile/kit.css`, `@bondwerk/site-kit/stile/palette.vorlage.css` | CSS aller Stufen bzw. Vorlage für `src/styles/palette.css` | Build |
 
+Von `./komponenten/*` ist nur `Abschnitte.astro` öffentlicher Vertrag. Die übrigen Dateien darunter
+(`Abschnitt.astro`, `Link.astro`, `varianten/*`) sind intern und können sich in jeder Version ändern.
+
 ### Sanitizer und externe Links
 
 `rehypeExterneLinks` läuft **nach** `rehype-sanitize`:
@@ -39,9 +42,14 @@ Palette: 14 Pflicht-Tokens (`--pal-*`) und 8 optionale Knopf-Tokens je Fläche. 
 Knopf-Token, greift der Fallback auf das umgekehrte Flächenpaar. Der Kontrast-Lint rechnet mit dem
 wirksamen Wert.
 
-Stil-Lint: `paletteLint()` prüft jedes CSS unter `src/` ausser `palette.css`. Verboten sind
-Farbliterale in Farbeigenschaften, `--pal-*`-Deklarationen und `text-decoration*: none` ausserhalb
-von `.kit-knopf` (Links im Fliesstext bleiben unterstrichen).
+Stil-Lint: `paletteLint()` prüft jedes CSS unter `src/` ausser `palette.css` und die `<style>`-Blöcke
+aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften,
+`--pal-*`-Deklarationen, `transparent` als Text- oder Linienfarbe, CSS-Escapes im
+Eigenschaftsnamen und ausserhalb von `.kit-knopf` jede `text-decoration`-Linie ausser `underline`
+(Links im Fliesstext bleiben unterstrichen). Symlinks unter `src/` und `@import` mit Ziel ausserhalb
+von `src/` (ausser `@bondwerk/site-kit/stile/kit.css`) sind ebenfalls Befunde. Nicht geprüft werden
+`public/*.css` und Präprozessor-Dateien (`.scss`, `.pcss` usw.); eine Site legt ihr CSS deshalb als
+`.css` unter `src/` oder in `<style>` ab.
 
 Pflicht für Konsumenten (Beispiel: eine Site „Grünwerk" auf `example.ch`):
 
@@ -62,7 +70,8 @@ Schema-Vertrag im JSON-Schema: `x-gestaltung` (Major.Minor), `x-gestaltungsstufe
 ## Veröffentlichung
 
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,
-Identifikator-Scan, dann `npm publish --provenance` per Trusted Publishing. Kein Token.
+Identifikator-Scan, Versions-Test gegen die gepinnte Basisversion aus `scripts/versions-basis.json` (Exporte bleiben eine
+Obermenge), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
 Das Paket enthält keine Kundendaten.
 
 Ablauf, Freigabe, Listenpflege und Rückweg bei einem Leck: [RELEASE.md](https://github.com/bondwerk/product-site-kit/blob/main/RELEASE.md).

@@ -2,7 +2,7 @@
    Normalwerte setzen kein Attribut und haben keine Regel: weggelassen = Look der Site (Plan B15).
    Titelgrössen relativ je Ebene; die Defaults halten klein < normal < gross gegen h2 = 1.5em und h3 = 1.17em. */
 .kit-seite { background-color: var(--pal-seite-bg); color: var(--pal-seite-text); }
-.kit-fliesstext a, .kit-abschnitt a:not(.kit-knopf) { text-decoration-line: underline; color: var(--pal-seite-link); }
+.kit-fliesstext a:not(.kit-knopf), .kit-abschnitt a:not(.kit-knopf) { text-decoration-line: underline; color: var(--pal-seite-link); }
 
 .kit-abschnitt { padding-block: var(--kit-abstand-normal, 2rem); }
 .kit-abschnitt[data-abstand="eng"] { padding-block: var(--kit-abstand-eng, 1rem); }

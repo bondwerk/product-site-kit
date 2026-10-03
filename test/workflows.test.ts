@@ -42,7 +42,7 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
       expect(npm11, name).toBeLessThan(text.indexOf('npm ci --ignore-scripts'));
     }
   });
-  it('Release: Tag auf main = Version; Job paket baut und packt vor den Tests; pruefen scannt genau diesen Tarball', () => {
+  it('Release: Tag auf main = Version; Job paket baut und packt vor den Tests; scan prüft genau diesen Tarball', () => {
     const r = lies('release.yml');
     expect(r).toContain("tags: ['v*.*.*']");
     const paket = job(r, 'paket');
@@ -53,11 +53,14 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
     expect(paket).toContain('actions/upload-artifact@');
     expect(paket).not.toContain('npm test');
     expect(pruefen).toContain('needs: paket');
-    for (const s of ['npm run typecheck', 'npm test', 'actions/download-artifact@',
-      'node scripts/identifikator-scan.mjs pack-ausgabe/*.tgz', 'node scripts/identifikator-scan.mjs --repo']) {
-      expect(pruefen, s).toContain(s);
-    }
+    for (const s of ['npm run typecheck', 'npm test']) expect(pruefen, s).toContain(s);
     expect(pruefen).not.toContain('pack-pruefung');
+    expect(pruefen).not.toContain('identifikator-scan');
+    const scan = job(r, 'scan');
+    expect(scan).toContain('needs: paket');
+    for (const s of ['actions/download-artifact@', 'node scripts/identifikator-scan.mjs pack-ausgabe/*.tgz', 'node scripts/identifikator-scan.mjs --repo']) {
+      expect(scan, s).toContain(s);
+    }
   });
   it('Release: Scans ohne Ausweg — fehlt das Geheimnis, scheitert der Job (kein Überspringen)', () => {
     const r = lies('release.yml');
@@ -68,7 +71,7 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
   it('Release: Publish-Job nach beiden, OIDC ohne Token, Provenance, ohne setup-node und ohne Checkout', () => {
     const r = lies('release.yml');
     const v = job(r, 'veroeffentlichen');
-    expect(v).toContain('needs: [paket, pruefen, versionen]');
+    expect(v).toContain('needs: [paket, pruefen, versionen, scan]');
     expect(v).toContain('environment: npm-release');
     expect(v).toContain('id-token: write');
     expect(v).toMatch(/npx --yes npm@11\.\d+\.\d+ publish "\$TARBALL" --provenance --access public/);
@@ -133,5 +136,26 @@ describe('Workflows (Spec #435 §4.1, §11.4; Council P1/P2)', () => {
   });
   it('Release: kein npm-Cache in den Release-Jobs', () => {
     expect(lies('release.yml')).not.toMatch(/cache:\s*npm/);
+  });
+  it('Identifikator-Scan im eigenen Job scan: ohne npm ci/npm test, Checkout ohne Credentials; das Geheimnis nur dort (Abschluss-Review)', () => {
+    for (const n of ['ci.yml', 'release.yml']) {
+      const yml = lies(n);
+      const scan = job(yml, 'scan');
+      expect(scan, n).not.toBe('');
+      expect(scan, n).not.toMatch(/npm (ci|test|install|run)\b|npx /);
+      expect(scan, n).toContain('fetch-depth: 0');
+      expect(scan, n).toContain('persist-credentials: false');
+      expect(scan, n).toContain('actions/setup-node@');
+      expect(scan, n).toContain('SITE_KIT_IDENTIFIKATOREN: ${{ secrets.SITE_KIT_IDENTIFIKATOREN }}');
+      expect(scan, n).toContain('node scripts/identifikator-scan.mjs pack-ausgabe/*.tgz');
+      expect(scan, n).toContain('node scripts/identifikator-scan.mjs --repo');
+      const jobs = [...yml.slice(yml.indexOf('\njobs:\n')).matchAll(/^ {2}([a-z][a-z0-9-]*):\n/gm)].map((m) => m[1]!);
+      expect(jobs, n).toContain('scan');
+      for (const j of jobs.filter((x) => x !== 'scan')) expect(job(yml, j), `${n}: ${j}`).not.toContain('SITE_KIT_IDENTIFIKATOREN');
+    }
+    expect(job(lies('ci.yml'), 'scan')).toContain('node scripts/identifikator-scan.mjs --repo --pr-text');
+  });
+  it('Job versionen checkt ohne persistierte Credentials aus (CI und Release)', () => {
+    for (const n of ['ci.yml', 'release.yml']) expect(job(lies(n), 'versionen'), n).toMatch(/actions\/checkout@[0-9a-f]{40}[^\n]*\n\s+with: \{[^}]*persist-credentials: false/);
   });
 });

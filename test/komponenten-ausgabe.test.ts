@@ -20,7 +20,7 @@ function baue(name: string, seiten: Record<string, object[]>): string {
   const json = join(tmp, `${name}.json`);
   writeFileSync(json, JSON.stringify(seiten));
   const ziel = join(tmp, name);
-  execFileSync('npx', ['astro', 'build', '--root', FIXTURE, '--outDir', ziel], { cwd: FIXTURE, stdio: 'pipe', env: { ...process.env, KIT_WURZEL: KIT, KIT_FIXTURE: json } });
+  execFileSync('npx', ['astro', 'build', '--root', FIXTURE, '--outDir', ziel], { cwd: FIXTURE, stdio: 'pipe', env: { ...process.env, ASTRO_TELEMETRY_DISABLED: '1', KIT_WURZEL: KIT, KIT_FIXTURE: json } });
   return ziel;
 }
 
@@ -32,6 +32,8 @@ const BASIS = [
   { variante: 'karten', id: 'a-0000000004', karten: [{ titel: 'Kurs', text: 'Für alle.', bild: 'bilder/kurs.webp', bildAlt: 'Kurs', link: '/kurse', linkLabel: 'Mehr' },
     { titel: 'Partner', link: 'https://example.ch/kurse', linkLabel: 'Kurse' }] },
   { variante: 'ctaBand', id: 'a-0000000005', text: 'Fragen?', knopf: { label: 'Anfragen', ziel: '#kontakt' } },
+  // Escape-Fall: Markup im Titel ist Text, kein HTML.
+  { variante: 'text', id: 'a-0000000006', titel: '<b>x</b>', absaetze: ['Ende.'] },
 ];
 /** Dieselben Abschnitte, jedes Feld auf seinem Normalwert — aus den Daten gelesen, nicht abgeschrieben. */
 const NORMAL = BASIS.map((a) => ({ ...a, ...normalwerte, ...(a.variante in bildpositionNormal ? { bildposition: bildpositionNormal[a.variante as keyof typeof bildpositionNormal] } : {}) }));
@@ -86,6 +88,11 @@ describe('Komponenten-Ausgabe (gebaut, Spec §11.1)', () => {
     expect(Object.keys(css(leer)).length).toBeGreaterThan(0);
     expect(css(wirkung)).toEqual(css(leer));
     expect(html(leer, 'basis')).not.toMatch(/<style\b|\sstyle=/);
+  });
+  it('Markup im Titel erscheint escaped, nicht als HTML', () => {
+    const h = html(leer, 'basis');
+    expect(h).toContain('>&lt;b&gt;x&lt;/b&gt;</h2>');
+    expect(h).not.toContain('<b>x</b>');
   });
   it('interner Link ohne target und rel, Knopf als .kit-knopf, externer Link mit target und rel', () => {
     const h = html(leer, 'basis');

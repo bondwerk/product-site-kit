@@ -27,6 +27,12 @@ describe('kit.css', () => {
     expect(regeln.some((r) => r.selektor.includes('.kit-fliesstext a') && r.selektor.includes('.kit-abschnitt a:not(.kit-knopf)')
       && r.deklarationen.includes('text-decoration-line: underline'))).toBe(true);
   });
+  it('jede Link-Regel nimmt den Knopf aus: a nur als a:not(.kit-knopf) (Abschluss-Review)', () => {
+    const teile = regeln.flatMap((r) => r.selektor.split(',').map((s) => s.trim()));
+    const links = teile.filter((s) => /(^|\s)a(?=$|[\s:.[])/.test(s));
+    expect(links.length).toBeGreaterThan(0);
+    for (const s of links) expect(s, s).toMatch(/(^|\s)a:not\(\.kit-knopf\)($|\s)/);
+  });
   it('jede Nicht-Normalstufe hat einen Selektor, Normalwerte keinen', () => {
     for (const [feld, werte] of Object.entries(stufen)) for (const w of werte) {
       const sel = `[data-${feld}="${w}"]`;
