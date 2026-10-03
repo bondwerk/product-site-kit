@@ -1,0 +1,21 @@
+---
+// Spec #435 §7.4: eine Stufe kommt als data-Attribut ins Markup; leer oder gleich normalwert → kein Attribut.
+import { normalwerte, bildpositionNormal } from '../schema/gestaltung.js';
+
+interface Props { a: { variante: string; [k: string]: unknown }; ebene: 2 | 3 }
+const { a, ebene } = Astro.props;
+type Feld = keyof typeof normalwerte;
+const stufe = (feld: Feld) => (a[feld] === undefined || a[feld] === normalwerte[feld] ? undefined : String(a[feld]));
+const bild = a.bildposition === undefined || a.bildposition === bildpositionNormal[a.variante] ? undefined : String(a.bildposition);
+const H = ebene === 3 ? 'h3' : 'h2';
+---
+<section class="kit-abschnitt" id={a.anker as string | undefined} data-abschnitt-id={a.id as string | undefined}
+  data-breite={stufe('breite')} data-betonung={stufe('betonung')} data-farbe={stufe('farbe')} data-titelgroesse={stufe('titelgroesse')}
+  data-ausrichtung={stufe('ausrichtung')} data-abstand={stufe('abstand')} data-bildposition={bild}>
+  <div class="kit-abschnitt__inhalt">
+    {a.titel !== undefined && <H class="kit-abschnitt__titel">{a.titel as string}</H>}
+    {a.lead !== undefined && <p class="kit-abschnitt__lead">{a.lead as string}</p>}
+    <slot />
+    {a.notiz !== undefined && <p class="kit-abschnitt__notiz">{a.notiz as string}</p>}
+  </div>
+</section>

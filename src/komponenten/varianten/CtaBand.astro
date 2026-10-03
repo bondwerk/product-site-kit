@@ -1,0 +1,6 @@
+---
+import Link from '../Link.astro';
+interface Props { a: { text?: string; knopf: { label: string; ziel: string } }; ebene: 2 | 3 }
+const { a } = Astro.props;
+---
+<div class="kit-cta">{a.text !== undefined && <p>{a.text}</p>}<Link ziel={a.knopf.ziel} knopf>{a.knopf.label}</Link></div>
