@@ -17,4 +17,10 @@ describe('Pack-Regeln (Spec #435 §9.2, §11.4)', () => {
     const listing = '-rw-r--r-- 0/0 10 1985-10-26 08:15 package/dist/a.js\nlrwxrwxrwx 0/0 0 1985-10-26 08:15 package/dist/b.js -> /etc/passwd\n';
     expect(tarTypBefunde(listing)).toEqual(['keine reguläre Datei: lrwxrwxrwx 0/0 0 1985-10-26 08:15 package/dist/b.js -> /etc/passwd']);
   });
+  it('Pfad-Allowlist: .astro nur unter dist/komponenten, .css nur unter dist/stile', () => {
+    expect(pfadBefunde(['dist/komponenten/Abschnitte.astro', 'dist/komponenten/varianten/Faq.astro', 'dist/stile/kit.css', 'dist/stile/palette.vorlage.css'])).toEqual([]);
+    expect(pfadBefunde(['dist/komponenten/x.css', 'dist/stile/x.astro', 'src/stile/kit.css', 'dist/stile/unter/x.css'])).toEqual([
+      'nicht erlaubt: dist/komponenten/x.css', 'nicht erlaubt: dist/stile/x.astro', 'nicht erlaubt: src/stile/kit.css', 'nicht erlaubt: dist/stile/unter/x.css',
+    ]);
+  });
 });

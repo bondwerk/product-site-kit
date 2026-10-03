@@ -7,7 +7,8 @@
    sich löschen, verschieben oder überschreiben (Rulesets `release-tags-anlegen` und
    `release-tags-unveraenderlich`).
 3. Workflow „Release": `paket` baut und packt und gibt den `integrity` (sha512) des Tarballs als
-   Job-Output weiter, `pruefen` testet und scannt genau diesen Tarball, `veroeffentlichen` wartet im
+   Job-Output weiter, `pruefen` testet, `scan` prüft genau diesen Tarball und das Repo gegen die
+   Identifikator-Liste (eigener Job ohne `npm ci` und ohne Tests), `veroeffentlichen` wartet im
    Environment `npm-release` auf die Freigabe, rechnet den `integrity` des heruntergeladenen
    Tarballs neu und bricht bei Abweichung vor `npm publish` ab.
 4. Freigabe durch den Betreiber (Selbstfreigabe, ein Reviewer). Die Kontrolle gegen eine bösartige
@@ -15,6 +16,8 @@
    und neuen `kitVersion`-Pin.
 5. Kontrolle: `npm view @bondwerk/site-kit@X.Y.Z dist.integrity` gleich dem `integrity` aus dem
    Log von `paket`; die Paketseite zeigt Provenance mit Repo und Tag-Commit.
+6. Nach dem Release hebt ein PR `scripts/versions-basis.json` auf die eben veröffentlichte Version;
+   `integrity` aus `npm view @bondwerk/site-kit@X.Y.Z dist.integrity`, gleich dem Wert aus dem Log von `paket`.
 
 CI und Release arbeiten mit npm 11, exakt gepinnt (npm 10 bricht auf dem Lockfile ab). Lokal
 entsprechend `npx npm@11 …`.
@@ -22,20 +25,23 @@ entsprechend `npx npm@11 …`.
 ## Versionen
 
 - v0.1.0: Tag gesetzt, Veröffentlichung am Pfad-Fehler gescheitert, nie auf npm; erste veröffentlichte Version ist 0.1.1.
+- v0.2.0: Abschnitte (text, bildText, faq, karten, ctaBand), Gestaltungsfelder, kit.css, Palette mit Kontrast- und Stil-Lint, Komponenten; Peer astro ^7.2.8 (Minor; Versions-Test gegen 0.1.1: Exporte).
 
 ## Sichtbarkeit
 
-Das Repo ist bis zum ersten Release privat. Vor dem Umschalten auf öffentlich scannt der Betreiber
-Code, ganze Historie, PR-Refs, alle Ref-Namen samt Tag-Texten und alle PR-Texte gegen die
-Identifikator-Liste. Erwartetes Ergebnis: 0 Treffer; das tatsächliche Ergebnis wird in Task 1.18
-festgehalten. Ab dem Umschalten scannt die CI jeden Push und jeden PR.
+Das Repo ist seit 0.1.1 öffentlich. Die Sperre vor einer Veröffentlichung ist der lokale
+Betreiber-Scan vor jedem Push: Code, ganze Historie, PR-Refs, alle Ref-Namen samt Tag-Texten und
+alle PR-Texte gegen die Identifikator-Liste (`--repo --pr-text`), erwartet 0 Treffer. Die CI
+scannt danach Branch-Pushes und PRs im eigenen Job `scan`, sofern das Geheimnis gesetzt ist; ohne
+Geheimnis und bei PRs aus Forks meldet sie nur einen Hinweis. Tag-Pushes ausser `v*` lösen keinen
+Scan aus; `v*`-Tags scannt der Release-Workflow fail-closed.
 
 ## Identifikator-Liste
 
 - Die Liste liegt im Passwort-Manager-Eintrag „site-kit Identifikatoren" und als Actions-Geheimnis
   `SITE_KIT_IDENTIFIKATOREN`, nirgends sonst: nicht im Repo, nicht in Issues, PRs oder Logs.
 - Fehlt das Geheimnis, meldet die CI nur einen Hinweis und überspringt den Scan; der Release
-  scheitert dann im Job `pruefen` (Exit 2). Das Geheimnis wird deshalb vor dem ersten PR gesetzt.
+  scheitert dann im Job `scan` (Exit 2). Das Geheimnis wird deshalb vor dem ersten PR gesetzt.
 - Die CI scannt Titel und Beschreibung eines PRs, nicht seine Kommentare und Reviews. Kundennamen
   haben auch in Kommentaren nichts verloren; vor dem Umschalten scannt der Betreiber sie mit.
 - Jede Änderung geschieht im selben Schritt an beiden Orten: Eintrag im Passwort-Manager

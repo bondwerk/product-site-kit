@@ -4,10 +4,11 @@ import { z } from 'astro/zod';
 export const contentBildPfad = z
   .string()
   .regex(/^bilder\/(?!.*\.\.)[a-z0-9äöü/._-]+\.(webp|png|jpe?g|avif)$/i, 'Rasterbild unter bilder/ erwartet (kein SVG)')
-  .refine((v) => !v.includes('..'), { message: 'Pfad-Ausbruch' });
+  .refine((v) => !v.includes('..'), { message: 'Pfad-Ausbruch' })
+  .meta({ 'x-klasse': 'inhalt' });
 
 /** Schweizer PLZ, vierstellig. */
-export const plz = z.string().regex(/^\d{4}$/, 'CH-PLZ (4-stellig) erwartet');
+export const plz = z.string().regex(/^\d{4}$/, 'CH-PLZ (4-stellig) erwartet').meta({ 'x-klasse': 'inhalt' });
 
 /** CH-Telefonnummer: Präfix +41, 0041 oder 0, insgesamt 10 bis 13 Ziffern. */
 export const chTelefon = z
@@ -16,4 +17,11 @@ export const chTelefon = z
   .refine((v) => {
     const ziffern = v.replace(/\D/g, '').length;
     return ziffern >= 10 && ziffern <= 13;
-  }, 'CH-Telefonnummer: 10 bis 13 Ziffern erwartet');
+  }, 'CH-Telefonnummer: 10 bis 13 Ziffern erwartet')
+  .meta({ 'x-klasse': 'inhalt' });
+
+/** Kontakt-E-Mail: genau eine Adresse, ohne Leerzeichen. */
+export const kontaktEmail = z
+  .string()
+  .regex(/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i, 'E-Mail-Adresse erwartet')
+  .meta({ 'x-klasse': 'inhalt' });

@@ -1,0 +1,12 @@
+---
+import Link from '../Link.astro';
+interface Karte { titel: string; text?: string; bild?: string; bildAlt?: string; link?: string; linkLabel?: string }
+interface Props { a: { karten: readonly Karte[] }; ebene: 2 | 3 }
+const { a, ebene } = Astro.props;
+const K = ebene === 3 ? 'h4' : 'h3';
+---
+<ul class="kit-karten">{a.karten.map((k) => (
+  <li class="kit-karte">
+    {k.bild !== undefined && <img class="kit-karte__bild" src={`/${k.bild}`} alt={k.bildAlt} loading="lazy" />}
+    <div><K class="kit-karte__titel">{k.titel}</K>{k.text !== undefined && <p>{k.text}</p>}{k.link !== undefined && <Link ziel={k.link}>{k.linkLabel}</Link>}</div>
+  </li>))}</ul>

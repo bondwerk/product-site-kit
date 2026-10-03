@@ -1,0 +1,17 @@
+---
+import { readFileSync } from 'node:fs';
+import Abschnitte from '@bondwerk/site-kit/komponenten/Abschnitte.astro';
+import { abschnittSchema } from '@bondwerk/site-kit/schema';
+import '@bondwerk/site-kit/stile/palette.vorlage.css';
+import '@bondwerk/site-kit/stile/kit.css';
+
+export function getStaticPaths() {
+  const schema = abschnittSchema(['text', 'bildText', 'faq', 'karten', 'ctaBand']);
+  const seiten = JSON.parse(readFileSync(process.env.KIT_FIXTURE as string, 'utf8')) as Record<string, unknown[]>;
+  return Object.entries(seiten).map(([seite, roh]) => ({ params: { seite }, props: { abschnitte: roh.map((a) => schema.parse(a)) } }));
+}
+const { abschnitte } = Astro.props;
+---
+<!doctype html>
+<html lang="de-CH"><head><meta charset="utf-8" /><title>Fixture</title></head>
+<body class="kit-seite"><main><Abschnitte abschnitte={abschnitte} /></main></body></html>

@@ -1,0 +1,5 @@
+---
+interface Props { a: { fragen: ReadonlyArray<{ frage: string; antwort: string }> }; ebene: 2 | 3 }
+const { a } = Astro.props;
+---
+<div class="kit-faq">{a.fragen.map((f) => <details><summary>{f.frage}</summary><p>{f.antwort}</p></details>)}</div>

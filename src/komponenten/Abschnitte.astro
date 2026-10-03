@@ -1,0 +1,16 @@
+---
+// Spec #435 §6.1/§6.4: rendert die sichtbaren Abschnitte in Array-Reihenfolge; unbekannte Variante bricht den Build.
+import Abschnitt from './Abschnitt.astro';
+import Text from './varianten/Text.astro';
+import BildText from './varianten/BildText.astro';
+import Faq from './varianten/Faq.astro';
+import Karten from './varianten/Karten.astro';
+import CtaBand from './varianten/CtaBand.astro';
+
+interface Props { abschnitte: ReadonlyArray<{ variante: string; sichtbar?: boolean; [k: string]: unknown }>; ebene?: 2 | 3 }
+const { abschnitte, ebene = 2 } = Astro.props;
+const KIT: Record<string, any> = { text: Text, bildText: BildText, faq: Faq, karten: Karten, ctaBand: CtaBand };
+const sichtbare = abschnitte.filter((a) => a.sichtbar !== false);
+for (const a of sichtbare) if (!(a.variante in KIT)) throw new Error(`Abschnitte: keine Komponente für Variante "${a.variante}"`);
+---
+{sichtbare.map((a) => { const V = KIT[a.variante]; return <Abschnitt a={a} ebene={ebene}><V a={a} ebene={ebene} /></Abschnitt>; })}

@@ -1,3 +1,5 @@
 node_modules/
 dist/
 pack-ausgabe/
+test/fixture-site/.astro/
+test/fixture-site/node_modules/

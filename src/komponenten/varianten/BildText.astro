@@ -1,0 +1,5 @@
+---
+interface Props { a: { bild: string; bildAlt: string; absaetze: readonly string[] }; ebene: 2 | 3 }
+const { a } = Astro.props;
+---
+<div class="kit-bildtext"><img class="kit-bildtext__bild" src={`/${a.bild}`} alt={a.bildAlt} loading="lazy" /><div>{a.absaetze.map((p) => <p>{p}</p>)}</div></div>

@@ -1,0 +1,7 @@
+---
+// Externe https-Links wie rehypeExterneLinks: neuer Tab, rel noopener noreferrer.
+interface Props { ziel: string; knopf?: boolean }
+const { ziel, knopf = false } = Astro.props;
+const extern = /^https:\/\//i.test(ziel);
+---
+<a href={ziel} class={knopf ? 'kit-knopf' : undefined} target={extern ? '_blank' : undefined} rel={extern ? 'noopener noreferrer' : undefined}><slot /></a>

@@ -1,0 +1,5 @@
+---
+interface Props { a: { absaetze: readonly string[] }; ebene: 2 | 3 }
+const { a } = Astro.props;
+---
+{a.absaetze.map((p) => <p>{p}</p>)}

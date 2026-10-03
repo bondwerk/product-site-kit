@@ -1,0 +1,47 @@
+/* @bondwerk/site-kit — kit.css (Spec #435 §6.1, §7). Farben nur über var(--pal-*), Längen mit Default über var(--kit-*).
+   Normalwerte setzen kein Attribut und haben keine Regel: weggelassen = Look der Site (Plan B15).
+   Titelgrössen relativ je Ebene; die Defaults halten klein < normal < gross gegen h2 = 1.5em und h3 = 1.17em. */
+.kit-seite { background-color: var(--pal-seite-bg); color: var(--pal-seite-text); }
+.kit-fliesstext a:not(.kit-knopf), .kit-abschnitt a:not(.kit-knopf) { text-decoration-line: underline; color: var(--pal-seite-link); }
+
+.kit-abschnitt { padding-block: var(--kit-abstand-normal, 2rem); }
+.kit-abschnitt[data-abstand="eng"] { padding-block: var(--kit-abstand-eng, 1rem); }
+.kit-abschnitt[data-abstand="weit"] { padding-block: var(--kit-abstand-weit, 4rem); }
+.kit-abschnitt__inhalt { max-width: var(--kit-lesebreite, 42rem); margin-inline: auto; }
+.kit-abschnitt[data-breite="voll"] > .kit-abschnitt__inhalt { max-width: none; }
+.kit-abschnitt[data-titelgroesse="gross"] h2.kit-abschnitt__titel { font-size: var(--kit-titel-gross-2, 2em); }
+.kit-abschnitt[data-titelgroesse="klein"] h2.kit-abschnitt__titel { font-size: var(--kit-titel-klein-2, 1.25em); }
+.kit-abschnitt[data-titelgroesse="gross"] h3.kit-abschnitt__titel { font-size: var(--kit-titel-gross-3, 1.5em); }
+.kit-abschnitt[data-titelgroesse="klein"] h3.kit-abschnitt__titel { font-size: var(--kit-titel-klein-3, 1em); }
+.kit-abschnitt[data-ausrichtung="zentriert"] .kit-abschnitt__titel, .kit-abschnitt[data-ausrichtung="zentriert"] .kit-abschnitt__lead { text-align: center; }
+
+.kit-abschnitt[data-betonung="hervorgehoben"] > .kit-abschnitt__inhalt { border-left: 0.25rem solid var(--pal-akzentlinie); padding-left: 1rem; }
+.kit-abschnitt[data-betonung="hervorgehoben"] .kit-abschnitt__lead { font-size: 1.2em; }
+.kit-abschnitt[data-betonung="hervorgehoben"][data-farbe="akzent"] > .kit-abschnitt__inhalt { border-left-color: var(--pal-akzent-text); }
+.kit-abschnitt[data-betonung="hervorgehoben"][data-farbe="dunkel"] > .kit-abschnitt__inhalt { border-left-color: var(--pal-dunkel-text); }
+.kit-abschnitt[data-betonung="kasten"] > .kit-abschnitt__inhalt { padding: 1.5rem; border: 1px solid var(--pal-rahmen); }
+.kit-abschnitt[data-betonung="kasten"][data-farbe] > .kit-abschnitt__inhalt { border-color: transparent; }
+
+.kit-abschnitt[data-farbe="hell"]:not([data-betonung="kasten"]), .kit-abschnitt[data-farbe="hell"][data-betonung="kasten"] > .kit-abschnitt__inhalt { background-color: var(--pal-hell-bg); color: var(--pal-hell-text); }
+.kit-abschnitt[data-farbe="akzent"]:not([data-betonung="kasten"]), .kit-abschnitt[data-farbe="akzent"][data-betonung="kasten"] > .kit-abschnitt__inhalt { background-color: var(--pal-akzent-bg); color: var(--pal-akzent-text); }
+.kit-abschnitt[data-farbe="dunkel"]:not([data-betonung="kasten"]), .kit-abschnitt[data-farbe="dunkel"][data-betonung="kasten"] > .kit-abschnitt__inhalt { background-color: var(--pal-dunkel-bg); color: var(--pal-dunkel-text); }
+.kit-abschnitt[data-farbe="hell"] a:not(.kit-knopf) { color: var(--pal-hell-link); }
+.kit-abschnitt[data-farbe="akzent"] a:not(.kit-knopf) { color: var(--pal-akzent-link); }
+.kit-abschnitt[data-farbe="dunkel"] a:not(.kit-knopf) { color: var(--pal-dunkel-link); }
+
+.kit-knopf { display: inline-block; padding: 0.6em 1.2em; border-radius: 0.25rem; text-decoration-line: none; background-color: var(--pal-seite-knopf-bg, var(--pal-seite-text)); color: var(--pal-seite-knopf-text, var(--pal-seite-bg)); }
+.kit-abschnitt[data-farbe="hell"] .kit-knopf { background-color: var(--pal-hell-knopf-bg, var(--pal-hell-text)); color: var(--pal-hell-knopf-text, var(--pal-hell-bg)); }
+.kit-abschnitt[data-farbe="akzent"] .kit-knopf { background-color: var(--pal-akzent-knopf-bg, var(--pal-akzent-text)); color: var(--pal-akzent-knopf-text, var(--pal-akzent-bg)); }
+.kit-abschnitt[data-farbe="dunkel"] .kit-knopf { background-color: var(--pal-dunkel-knopf-bg, var(--pal-dunkel-text)); color: var(--pal-dunkel-knopf-text, var(--pal-dunkel-bg)); }
+
+.kit-bildtext { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; align-items: start; }
+.kit-bildtext__bild, .kit-karte__bild { max-width: 100%; height: auto; }
+.kit-abschnitt[data-bildposition="rechts"] .kit-bildtext__bild { order: 2; }
+.kit-abschnitt[data-bildposition="oben"] .kit-bildtext { grid-template-columns: 1fr; }
+.kit-karten { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); list-style: none; padding: 0; }
+.kit-karte { display: flex; flex-direction: column; gap: 0.75rem; }
+.kit-abschnitt[data-bildposition="links"] .kit-karte { flex-direction: row; }
+.kit-abschnitt[data-bildposition="rechts"] .kit-karte { flex-direction: row-reverse; }
+.kit-faq details { padding-block: 0.5rem; }
+.kit-cta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+@media (max-width: 40rem) { .kit-bildtext { grid-template-columns: 1fr; } }

@@ -1,6 +1,6 @@
 {
   "name": "@bondwerk/site-kit",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Gemeinsame Bausteine für bondwerk-Kunden-Sites auf Astro: Feld-Primitiven, JSON-Schema-Vertrag, Lints, Build-Integrationen, Testhelfer.",
   "license": "MIT",
   "type": "module",
@@ -12,19 +12,21 @@
     "./lints": { "types": "./dist/lints/index.d.ts", "default": "./dist/lints/index.js" },
     "./integrationen": { "types": "./dist/integrationen/index.d.ts", "default": "./dist/integrationen/index.js" },
     "./test": { "types": "./dist/test/index.d.ts", "default": "./dist/test/index.js" },
+    "./komponenten/*": "./dist/komponenten/*",
+    "./stile/*": "./dist/stile/*",
     "./package.json": "./package.json"
   },
-  "files": ["dist/**/*.js", "dist/**/*.d.ts", "README.md", "LICENSE"],
-  "sideEffects": false,
-  "peerDependencies": { "astro": "^7.0.6", "zod": "^4.3.6", "rehype-sanitize": "^6.0.0" },
+  "files": ["dist/**/*.js", "dist/**/*.d.ts", "dist/**/*.astro", "dist/**/*.css", "README.md", "LICENSE"],
+  "sideEffects": ["**/*.css"],
+  "peerDependencies": { "astro": "^7.2.8", "zod": "^4.3.6", "rehype-sanitize": "^6.0.0" },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/kopiere-quellen.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.build.json --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "astro": "7.0.6",
+    "astro": "7.2.8",
     "esbuild": "^0.28.0",
     "rehype-sanitize": "^6.0.0",
     "typescript": "^5.6.0",
