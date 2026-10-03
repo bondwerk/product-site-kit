@@ -18,7 +18,7 @@ const ERWARTET: Record<string, string[]> = {
   'json-schema': ['alsJsonSchemaAus'],
   lints: ['enthaeltGefaehrlicheKeys', 'kontaktGateBefund', 'lintDatei', 'lintJsonKeys', 'lintText', 'safeJsonParse'],
   integrationen: ['bilderCopy', 'contentLint', 'nurCollectionsLint', 'rehypeExterneLinks', 'sanitizeSchema'],
-  test: ['inlineBefunde', 'symlinkEintraege'],
+  test: ['inlineBefunde', 'schemaGroesse', 'symlinkEintraege'],
 };
 
 function exporteUeberPaketnamen(subpath: string): string[] {
