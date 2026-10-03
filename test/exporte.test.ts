@@ -14,7 +14,7 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 
 // Erwartete öffentliche Namen je Subpath (Plan #435 §2.1, Dateikarte); wächst mit jedem Task.
 const ERWARTET: Record<string, string[]> = {
-  schema: ['EMAIL_ADRESSE', 'URL_ODER_SCHEME', 'bildpositionNormal', 'chTelefon', 'contentBildPfad', 'normalwerte', 'plz', 'sichererText', 'sichererTextFuer'],
+  schema: ['EMAIL_ADRESSE', 'URL_ODER_SCHEME', 'abschnittSchema', 'bildpositionNormal', 'chTelefon', 'contentBildPfad', 'normalwerte', 'plz', 'seiteSchema', 'sichererText', 'sichererTextFuer'],
   'json-schema': ['alsJsonSchemaAus'],
   lints: ['enthaeltGefaehrlicheKeys', 'kontaktGateBefund', 'lintDatei', 'lintJsonKeys', 'lintText', 'safeJsonParse'],
   integrationen: ['bilderCopy', 'contentLint', 'nurCollectionsLint', 'rehypeExterneLinks', 'sanitizeSchema'],
