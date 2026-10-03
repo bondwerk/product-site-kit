@@ -13,7 +13,7 @@ export const stufen = {
 /** Normalwert je Feld als Daten (§6.1). Komponente, Nullwert-Test und Labels lesen nur von hier. */
 export const normalwerte = { breite: 'normal', betonung: 'normal', farbe: 'standard', titelgroesse: 'normal', ausrichtung: 'links', abstand: 'normal', sichtbar: true } as const;
 /** bildposition hat je Variante einen eigenen Normalwert (§6.1). */
-export const bildpositionNormal: Readonly<Record<string, 'links' | 'rechts' | 'oben'>> = { bildText: 'links', karten: 'oben' };
+export const bildpositionNormal = { bildText: 'links', karten: 'oben' } as const satisfies Record<'bildText' | 'karten', 'links' | 'rechts' | 'oben'>;
 
 interface WertEintrag { readonly label: string; readonly wirkung: string; readonly kundenwoerter: readonly string[] }
 /** F3: Ersatz setzt einen anderen Wert; O6: Rückfrage setzt keinen Wert, die Freigabe fragt nach (S4: Löschung, Stufe ≥ 2). */

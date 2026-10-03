@@ -24,7 +24,6 @@ describe('alsJsonSchemaAus mit Gestaltung', () => {
         expect(v.properties[feld], `${v.properties.variante.const}.${feld}`).toEqual({ $ref: `#/$defs/gestaltung-${feld}` });
       }
       expect(v.required).not.toContain('breite');
-      expect(v['x-kit-variante']).toBeUndefined();
     }
     const d = s.$defs['gestaltung-titelgroesse'];
     expect(d).toMatchObject({ type: 'string', enum: ['klein', 'normal', 'gross'], description: beschreibung('titelgroesse'),

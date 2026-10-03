@@ -70,3 +70,27 @@ describe('seiteSchema — Anker (B17)', () => {
     expect(seiteSchema(abschnittSchema(['text'])).safeParse({ titel: 'X', abschnitte: [{ ...text, anker: 'impressum' }] }).success).toBe(true);
   });
 });
+
+describe('anker und .strict() (Review-Befund 5)', () => {
+  const s = abschnittSchema(['text', 'faq', 'karten', 'ctaBand']);
+  const seite = seiteSchema(abschnittSchema(['text']));
+  it('anker-Regex: gültig angenommen; Grossbuchstaben, Leerzeichen, 41 Zeichen abgelehnt', () => {
+    expect(s.safeParse({ ...text, anker: 'kontakt-1' }).success).toBe(true);
+    expect(s.safeParse({ ...text, anker: 'a'.repeat(40) }).success).toBe(true);
+    for (const schlecht of ['Kontakt', 'a b', 'a'.repeat(41)]) expect(s.safeParse({ ...text, anker: schlecht }).success, schlecht).toBe(false);
+  });
+  it('karte: unbekanntes Feld abgelehnt', () => {
+    expect(s.safeParse({ variante: 'karten', karten: [{ titel: 'Kurs', fremd: 1 }] }).success).toBe(false);
+    expect(s.safeParse({ variante: 'karten', karten: [{ titel: 'Kurs' }] }).success).toBe(true);
+  });
+  it('knopf: unbekanntes Feld abgelehnt', () => {
+    expect(s.safeParse({ variante: 'ctaBand', knopf: { label: 'Los', ziel: '/x', fremd: 1 } }).success).toBe(false);
+  });
+  it('faq-Eintrag: unbekanntes Feld abgelehnt', () => {
+    expect(s.safeParse({ variante: 'faq', fragen: [{ frage: 'F?', antwort: 'A.', fremd: 1 }] }).success).toBe(false);
+  });
+  it('Seitenobjekt: unbekanntes Feld abgelehnt', () => {
+    expect(seite.safeParse({ titel: 'Start', abschnitte: [] }).success).toBe(true);
+    expect(seite.safeParse({ titel: 'Start', abschnitte: [], fremd: 1 }).success).toBe(false);
+  });
+});

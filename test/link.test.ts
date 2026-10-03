@@ -22,6 +22,25 @@ describe('linkZiel', () => {
   });
 });
 
+describe('linkZiel — Zeichen, Port, Labels (Review-Befund 1)', () => {
+  it('lehnt Steuer-, Bidi-, Nullbreiten-, Backslash-, Port- und Label-Fälle ab', () => {
+    const faelle = ['https://example.ch/\u0000x', 'https://example.ch/\u0001', 'https://example.ch/\u202Eabc', 'https://example.ch/a\u200Bb',
+      'https://example.ch/a\\b', 'https://example.ch:99999/x', 'https://example.ch:65536', 'https://-.ch', 'https://-a.example.ch', 'https://a-.example.ch',
+      `https://${'a'.repeat(64)}.example.ch`, 'https://example.ch/a`b', 'https://example.ch/\u00e4'];
+    for (const f of faelle) expect(linkZiel.safeParse(f).success, JSON.stringify(f)).toBe(false);
+  });
+  it('lässt gültige Randfälle zu', () => {
+    for (const gut of ['https://example.ch:65535/x', 'https://example.ch:443', 'https://a-b.example.ch/p?q=1&r=2#frag', `https://${'a'.repeat(63)}.example.ch`]) {
+      expect(linkZiel.safeParse(gut).success, gut).toBe(true);
+    }
+  });
+  it('JSON-Schema des Feldes trägt eine description mit den erlaubten Formen', () => {
+    const js = z.toJSONSchema(z.object({ l: linkZiel }).strict(), { unrepresentable: 'any' }) as { properties: Record<string, Record<string, unknown>> };
+    expect(typeof js.properties.l!.description).toBe('string');
+    expect(js.properties.l!.description).toMatch(/tel:/);
+  });
+});
+
 describe('x-klasse an den Primitiven (B5, Spec §6.3)', () => {
   it('Inhaltsfelder tragen x-klasse inhalt, Linkziele x-klasse link — auch unter .optional()', () => {
     const js = z.toJSONSchema(z.object({ t: sichererText(80), o: sichererText(80).optional(), b: contentBildPfad, l: linkZiel.optional() }).strict(), { unrepresentable: 'any' }) as {
