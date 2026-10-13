@@ -46,7 +46,21 @@ Stil-Lint: `paletteLint()` prüft jedes CSS unter `src/` ausser `palette.css` un
 aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften,
 `--pal-*`-Deklarationen, `transparent` als Text- oder Linienfarbe, CSS-Escapes im
 Eigenschaftsnamen und ausserhalb von `.kit-knopf` jede `text-decoration`-Linie ausser `underline`
-(Links im Fliesstext bleiben unterstrichen). Symlinks unter `src/` und `@import` mit Ziel ausserhalb
+(Links im Fliesstext und in Kit-Abschnitten bleiben unterstrichen). Ausnahme ab 0.3.0: `text-decoration: none`
+(bzw. `text-decoration-line: none`) ist ausserhalb von Fliesstext und Kit-Abschnitten erlaubt, etwa `a`, `.knopf`
+oder `.news__karte h3 a`. Grundlage ist die Kaskade: `kit.css` unterstreicht mit
+`.kit-fliesstext a:not(.kit-knopf), .kit-abschnitt a:not(.kit-knopf)` (Spezifität 0,2,1). Der Lint lässt `none`
+deshalb nur zu, wenn jeder Selektor der Regel eine Spezifität strikt unter (0,2,1) hat (also keine ID, höchstens
+eine Klasse plus Elemente oder zwei Klassen ohne Element), nirgends `kit-` vorkommt, kein Escape, kein
+`!important` und die Regel nicht in einer anderen Stilregel verschachtelt ist (CSS-Nesting). Kein `@import` darf
+`layer` tragen (Befund, auch über eine Zwischendatei), sonst gewänne jedes Site-CSS gegen `kit.css`; `@layer`-Blöcke bleiben erlaubt. **Folge:** Fliesstext, den die Site
+selbst rendert (etwa Markdown), muss in `class="kit-fliesstext"` stehen; sonst verliert er mit einer globalen
+Regel wie `a { text-decoration: none }` die Unterstreichung, ohne dass der Lint es merkt.
+Farbverläufe: `linear-gradient` ist erlaubt, wenn jeder Farbstopp `var(--pal-*)`, `transparent` oder genau
+`color-mix(in srgb, var(--pal-*) n%, transparent)` (n von 0 bis 100) ist, dazu Richtung, Winkel und Positionen.
+Literal-Farben im Verlauf, andere `color-mix`-Formen, `radial-gradient` und `repeating-linear-gradient` bleiben
+Befunde. Verläufe gehören in `background-image`; Zusätze wie `no-repeat` oder `center` in der Kurzform
+`background` sind Befunde, dafür `background-repeat`, `background-position` usw. einzeln setzen. Symlinks unter `src/` und `@import` mit Ziel ausserhalb
 von `src/` (ausser `@bondwerk/site-kit/stile/kit.css`) sind ebenfalls Befunde. Nicht geprüft werden
 `public/*.css` und Präprozessor-Dateien (`.scss`, `.pcss` usw.); eine Site legt ihr CSS deshalb als
 `.css` unter `src/` oder in `<style>` ab.
@@ -71,7 +85,9 @@ Schema-Vertrag im JSON-Schema: `x-gestaltung` (Major.Minor), `x-gestaltungsstufe
 
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,
 Identifikator-Scan, Versions-Test gegen die gepinnte Basisversion aus `scripts/versions-basis.json` (Exporte bleiben eine
-Obermenge), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
+Obermenge, jede alte `kit.css`-Regel bleibt wörtlich und in gleicher Ordnung enthalten, das normalisierte HTML der Fixture-Site
+bleibt gleich; Abweichungen nur über `scripts/versions-ausnahmen.json`, je Eintrag `basis`, `regel` oder
+`seite` und `begruendung`, gültig nur für genau diese Basisversion), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
 Das Paket enthält keine Kundendaten.
 
 Ablauf, Freigabe, Listenpflege und Rückweg bei einem Leck: [RELEASE.md](https://github.com/bondwerk/product-site-kit/blob/main/RELEASE.md).

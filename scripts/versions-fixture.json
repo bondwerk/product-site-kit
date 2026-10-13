@@ -1,0 +1,17 @@
+{
+  "basis": [
+    { "variante": "text", "id": "a-0000000001", "titel": "Über uns", "lead": "Seit 1998.", "absaetze": ["Werkstatt am Feldweg 3."] },
+    { "variante": "bildText", "id": "a-0000000002", "titel": "Laden", "bild": "bilder/laden.webp", "bildAlt": "Ladenlokal", "absaetze": ["Hell und freundlich."] },
+    { "variante": "faq", "id": "a-0000000003", "titel": "Fragen", "fragen": [{ "frage": "Wann offen?", "antwort": "Montag bis Freitag." }] },
+    { "variante": "karten", "id": "a-0000000004", "karten": [{ "titel": "Kurs", "text": "Für alle.", "bild": "bilder/kurs.webp", "bildAlt": "Kurs", "link": "/kurse", "linkLabel": "Mehr" },
+      { "titel": "Partner", "link": "https://example.ch/kurse", "linkLabel": "Kurse" }] },
+    { "variante": "ctaBand", "id": "a-0000000005", "text": "Fragen?", "knopf": { "label": "Anfragen", "ziel": "#kontakt" } }
+  ],
+  "gestaltung": [
+    { "variante": "text", "id": "a-0000000011", "titel": "Breit", "absaetze": ["Eins."], "breite": "voll", "betonung": "kasten", "farbe": "akzent", "abstand": "weit" },
+    { "variante": "text", "id": "a-0000000012", "titel": "Hervor", "absaetze": ["Zwei."], "betonung": "hervorgehoben", "farbe": "dunkel", "titelgroesse": "gross", "ausrichtung": "zentriert" },
+    { "variante": "bildText", "id": "a-0000000013", "titel": "Rechts", "bild": "bilder/laden.webp", "bildAlt": "Ladenlokal", "absaetze": ["Drei."], "bildposition": "rechts", "farbe": "hell", "abstand": "eng" },
+    { "variante": "karten", "id": "a-0000000014", "karten": [{ "titel": "Links", "link": "/x", "linkLabel": "X" }], "bildposition": "links", "titelgroesse": "klein" },
+    { "variante": "faq", "id": "a-0000000015", "titel": "Aus", "fragen": [{ "frage": "F?", "antwort": "A." }], "sichtbar": false }
+  ]
+}
