@@ -32,12 +32,15 @@ function cssAus(pfad: string): string {
 /** @import-Ziele, die nicht unter src/ liegen (relativ zur Datei aufgelöst; Wurzelpfade, URLs und Pakete zählen als aussen). */
 function importBefunde(css: string, pfad: string, src: string): string[] {
   const ohneKommentar = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  return [...ohneKommentar.matchAll(/@import\s+(?:url\(\s*)?(["']?)([^"')\s;]+)\1/gi)].flatMap((m) => {
+  return [...ohneKommentar.matchAll(/@import\s+(?:url\(\s*)?(["']?)([^"')\s;]+)\1\s*\)?([^;]*)/gi)].flatMap((m) => {
     const ziel = m[2]!;
-    if (ziel === KIT_CSS) return [];
+    // Jedes @import in eine Ebene ist Befund: kit.css darin (direkt oder über eine Zwischendatei) verlöre gegen jedes
+    // ungeschichtete Site-CSS, die Link-Ausnahme des Stil-Lints setzt das Gegenteil voraus. @layer-Blöcke bleiben erlaubt.
+    const ebene = /(^|\s)layer\b/i.test(m[3]!) ? [`@import in eine Kaskadenebene (layer): «${ziel}»`] : [];
+    if (ziel === KIT_CSS) return ebene;
     const relativ = ziel.startsWith('./') || ziel.startsWith('../');
     const aufgeloest = relativ ? relative(src, resolve(dirname(pfad), ziel.replace(/[?#].*$/, ''))) : '..';
-    return aufgeloest.startsWith('..') || isAbsolute(aufgeloest) ? [`@import ausserhalb src/: «${ziel}»`] : [];
+    return [...ebene, ...(aufgeloest.startsWith('..') || isAbsolute(aufgeloest) ? [`@import ausserhalb src/: «${ziel}»`] : [])];
   });
 }
 

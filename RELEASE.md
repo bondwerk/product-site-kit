@@ -26,6 +26,7 @@ entsprechend `npx npm@11 …`.
 
 - v0.1.0: Tag gesetzt, Veröffentlichung am Pfad-Fehler gescheitert, nie auf npm; erste veröffentlichte Version ist 0.1.1.
 - v0.2.0: Abschnitte (text, bildText, faq, karten, ctaBand), Gestaltungsfelder, kit.css, Palette mit Kontrast- und Stil-Lint, Komponenten; Peer astro ^7.2.8 (Minor; Versions-Test gegen 0.1.1: Exporte).
+- v0.3.0: Stil-Lint lockert zwei Regeln (Betreiber-Entscheid 13.10.): `text-decoration: none` ausserhalb von Fliesstext und Kit-Abschnitten (Selektoren strikt unter der Spezifität des Kit-Schutzes 0,2,1, ohne `kit-`, Nesting und `!important`; kein `@import … layer`); `linear-gradient` mit Farbstopps nur aus `var(--pal-*)`, `transparent` oder `color-mix(in srgb, var(--pal-*) n%, transparent)`. Versions-Test Teil 2: kit.css-Obermenge in gleicher Ordnung und normalisiertes HTML der Fixture-Site, Ausnahmen in `scripts/versions-ausnahmen.json` (Minor; Versions-Test gegen 0.2.0: Exporte, kit.css, HTML).
 
 ## Sichtbarkeit
 
