@@ -1,7 +1,10 @@
 // Spec #435 §7.1/§7.2, Plan B2/B18: Stil-Lint für jedes CSS ausser palette.css (Kit und Site). Kein node:*.
 const FARB_EIGENSCHAFT = new RegExp('^(color|background(-color|-image)?|border(-(top|right|bottom|left))?(-color)?'
   + '|border-(block|inline)(-(start|end))?(-color)?|outline(-color)?|text-decoration(-color)?|box-shadow|text-shadow'
-  + '|-webkit-text-fill-color|column-rule(-color)?|text-emphasis(-color)?|fill|stroke|caret-color|accent-color|all)$');
+  + '|-webkit-text-fill-color|column-rule(-color)?|text-emphasis(-color)?|fill|stroke|caret-color|accent-color|all'
+  + '|(-webkit-)?border-image(-source)?|list-style-image|(-webkit-)?(backdrop-)?filter)$');
+/** filter trägt auch farblose Funktionen (blur, brightness …); geprüft wird nur die Farbe in drop-shadow(…). */
+const FILTER = /^(-webkit-)?(backdrop-)?filter$/;
 const ERLAUBT = /^(currentcolor|transparent|inherit|none|solid|dashed|dotted|double|wavy|underline|overline|line-through|blink|0|-?\d*\.?\d+(px|rem|em|%)?)$/i;
 const PALETTE_VAR = /var\(--pal-[a-z-]+(?:,\s*var\(--pal-[a-z-]+\))?\)/g;
 /** Eigenschaften, bei denen transparent den Text oder seine Linie unsichtbar macht. */
@@ -110,6 +113,20 @@ function ohnePaletteVerlaeufe(wert: string): string {
   return aus + wert.slice(pos);
 }
 
+/** Wertteile innerhalb aller drop-shadow(…) eines filter-Werts; ein nicht geschlossenes drop-shadow bleibt samt Namen stehen und wird so zum Befund. */
+function dropShadowTeile(wert: string): string[] {
+  const anfang = /(?<![\w-])drop-shadow\(/gi;
+  const teile: string[] = [];
+  for (let m = anfang.exec(wert); m; m = anfang.exec(wert)) {
+    let tiefe = 1; let ende = m.index + m[0].length;
+    for (; ende < wert.length && tiefe > 0; ende++) tiefe += wert[ende] === '(' ? 1 : wert[ende] === ')' ? -1 : 0;
+    const innen = tiefe > 0 ? wert.slice(m.index) : wert.slice(m.index + m[0].length, ende - 1);
+    teile.push(...innen.replace(PALETTE_VAR, '').split(/[\s,]+/).filter(Boolean));
+    anfang.lastIndex = ende;
+  }
+  return teile;
+}
+
 /** Blöcke mit ihren Deklarationen; verschachtelt = eine umgebende Regel ist eine Stilregel (CSS-Nesting), keine @-Regel. */
 function bloecke(css: string): Array<{ selektor: string; dekl: string; verschachtelt: boolean }> {
   const out: Array<{ selektor: string; dekl: string; verschachtelt: boolean }> = [];
@@ -153,7 +170,7 @@ export function stilBefunde(css: string): string[] {
       if (OHNE_TRANSPARENT.test(eig) && teile.some((t) => t.toLowerCase() === 'transparent')) {
         befunde.push(`Text- oder Linienfarbe transparent: ${zitat}`);
       }
-      if (FARB_EIGENSCHAFT.test(eig) && teile.some((t) => !ERLAUBT.test(t))) {
+      if (FARB_EIGENSCHAFT.test(eig) && (FILTER.test(eig) ? dropShadowTeile(wert) : teile).some((t) => !ERLAUBT.test(t))) {
         befunde.push(`Farbe nicht aus der Palette: ${zitat}`);
       }
     }

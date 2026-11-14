@@ -43,7 +43,7 @@ Knopf-Token, greift der Fallback auf das umgekehrte Flächenpaar. Der Kontrast-L
 wirksamen Wert.
 
 Stil-Lint: `paletteLint()` prüft jedes CSS unter `src/` ausser `palette.css` und die `<style>`-Blöcke
-aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften,
+aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften (auch `border-image`, `list-style-image` und die Farbe in `drop-shadow(…)` von `filter`),
 `--pal-*`-Deklarationen, `transparent` als Text- oder Linienfarbe, CSS-Escapes im
 Eigenschaftsnamen und ausserhalb von `.kit-knopf` jede `text-decoration`-Linie ausser `underline`
 (Links im Fliesstext und in Kit-Abschnitten bleiben unterstrichen). Ausnahme ab 0.3.0: `text-decoration: none`
@@ -85,9 +85,9 @@ Schema-Vertrag im JSON-Schema: `x-gestaltung` (Major.Minor), `x-gestaltungsstufe
 
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,
 Identifikator-Scan, Versions-Test gegen die gepinnte Basisversion aus `scripts/versions-basis.json` (Exporte bleiben eine
-Obermenge, jede alte `kit.css`-Regel bleibt wörtlich und in gleicher Ordnung enthalten, das normalisierte HTML der Fixture-Site
+Obermenge, jede alte Regel von `kit.css` und `palette.vorlage.css` bleibt wörtlich und in gleicher Ordnung enthalten, das normalisierte HTML der Fixture-Site
 bleibt gleich; Abweichungen nur über `scripts/versions-ausnahmen.json`, je Eintrag `basis`, `regel` oder
-`seite` und `begruendung`, gültig nur für genau diese Basisversion), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
+`seite` und `begruendung`, gültig nur für genau diese Basisversion; eine Ausnahme, die im Lauf keine Abweichung deckt, ist selbst ein Befund), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
 Das Paket enthält keine Kundendaten.
 
 Ablauf, Freigabe, Listenpflege und Rückweg bei einem Leck: [RELEASE.md](https://github.com/bondwerk/product-site-kit/blob/main/RELEASE.md).
