@@ -56,6 +56,7 @@ eine Klasse plus Elemente oder zwei Klassen ohne Element), nirgends `kit-` vorko
 `layer` tragen (Befund, auch über eine Zwischendatei), sonst gewänne jedes Site-CSS gegen `kit.css`; `@layer`-Blöcke bleiben erlaubt. **Folge:** Fliesstext, den die Site
 selbst rendert (etwa Markdown), muss in `class="kit-fliesstext"` stehen; sonst verliert er mit einer globalen
 Regel wie `a { text-decoration: none }` die Unterstreichung, ohne dass der Lint es merkt.
+Die Zerlegung des CSS kennt Zeichenketten (auch mit Escape), Kommentare und ungequotetes `url(…)`; ein nicht geschlossener String, Kommentar, `url(` oder Block und ein überzähliges `}` sind Befunde (`CSS nicht sicher lesbar`), kein Wurf.
 Farbverläufe: `linear-gradient` ist erlaubt, wenn jeder Farbstopp `var(--pal-*)`, `transparent` oder genau
 `color-mix(in srgb, var(--pal-*) n%, transparent)` (n von 0 bis 100) ist, dazu Richtung, Winkel und Positionen.
 Literal-Farben im Verlauf, andere `color-mix`-Formen, `radial-gradient` und `repeating-linear-gradient` bleiben

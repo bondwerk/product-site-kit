@@ -277,3 +277,43 @@ describe('stilBefunde — border-image, list-style-image und filter: drop-shadow
     expect(stilBefunde(`.x { filter: ${w}; }`)).toEqual(FARBE(`«.x { filter: ${w} }»`));
   });
 });
+
+// Issue #4 Punkt 6, Stil-Lint: Zerlegung kennt Strings (auch mit Escape), Kommentare, Klammertiefe; Offenes ist ein Befund.
+describe('stilBefunde — Strings, Kommentare, Offenes (Issue #4 Punkt 6)', () => {
+  const ROT = (sel: string, d: string): string => `Farbe nicht aus der Palette: «${sel} { ${d} }»`;
+  const OFFEN = (was: string): string => `CSS nicht sicher lesbar: ${was}`;
+  const FAELLE: Array<[string, string, string[]]> = [
+    ['} im "String": Farbe danach wird gemeldet', 'a { content: "}"; color: red; }', [ROT('a', 'color: red')]],
+    ["} im 'String': Farbe danach wird gemeldet", "a { content: '}'; color: red; }", [ROT('a', 'color: red')]],
+    ['; im String: Farbe danach wird gemeldet', 'a { content: "a;b"; color: red; }', [ROT('a', 'color: red')]],
+    ['; im String: Text im String ist keine Deklaration', 'a { content: "x;color:red"; gap: 0; }', []],
+    ['{ im String: Farbe danach wird gemeldet', 'a { content: "{"; color: red; }', [ROT('a', 'color: red')]],
+    ['{ im String: Text im String ist kein Block', 'a { content: "{ color: red }"; gap: 0; }', []],
+    [': im String: Farbe danach wird gemeldet', 'a { content: "a:b"; color: red; }', [ROT('a', 'color: red')]],
+    [': im String: Text im String ist keine Deklaration', 'a { content: "color:red"; gap: 0; }', []],
+    ['escaptes " im String: } bleibt im String', 'a { content: "a\\"}"; color: red; }', [ROT('a', 'color: red')]],
+    ['escaptes " im String: ; und } bleiben im String', 'a { content: "a\\"; color:red; }"; gap: 0; }', []],
+    ["escaptes ' im String", "a { content: 'a\\'}'; color: red; }", [ROT('a', 'color: red')]],
+    ['Kommentar /* } */', 'a { /* } */ color: red; }', [ROT('a', 'color: red')]],
+    ['Kommentar /* ; */ versteckt nichts und erfindet nichts', 'a { content: x; /* ; color: red */ gap: 0; }', []],
+    ['Kommentar /* " */ öffnet keinen String', 'a { /* " */ color: red; }', [ROT('a', 'color: red')]],
+    ['Kommentar mit Farbe bleibt ohne Befund', 'a { /* color: red; */ gap: 0; }', []],
+    ['/* im String ist kein Kommentar', 'a { content: "/*"; color: red; } b { content: "*/"; }', [ROT('a', 'color: red')]],
+    ['String im Selektor', 'a[title="}"] { color: red; }', [ROT('a[title="}"]', 'color: red')]],
+    ['ungequotetes url(data:…;…}…) schützt ; und }', 'a { mask-image: url(data:image/svg+xml;base64,AA}A); gap: 0; color: red; }', [ROT('a', 'color: red')]],
+    ['verschachtelte Regel mit String', '.a { .b { content: "}"; color: red; } gap: 0; }', [ROT('.b', 'color: red')]],
+    ['@media mit String: beide Regeln werden gelesen', '@media (min-width: 1px) { a { content: "}"; color: red; } b { color: blue; } }', [ROT('a', 'color: red'), ROT('b', 'color: blue')]],
+    ['@import mit ; im String endet nicht den Kopf', '@import "a;b.css"; a { color: red; }', [ROT('a', 'color: red')]],
+    ['offener String ist ein Befund', 'a { content: "x; color: red; }', [OFFEN('Zeichenkette nicht geschlossen')]],
+    ['offener Kommentar ist ein Befund, Vorheriges wird geprüft', 'a { color: red; } /* offen', [ROT('a', 'color: red'), OFFEN('Kommentar nicht geschlossen')]],
+    ['offener Block ist ein Befund', 'a { color: red; ', [OFFEN('«{» nicht geschlossen')]],
+    ['überzähliges } ist ein Befund', 'a { color: red; } }', [ROT('a', 'color: red'), OFFEN('«}» ohne öffnendes «{»')]],
+    ['offene ( ist ein Befund', 'a { background: url(x; color: red; }', [OFFEN('«(» nicht geschlossen')]],
+  ];
+  it.each(FAELLE)('%s', (_name, css, soll) => {
+    expect(stilBefunde(css)).toEqual(soll);
+  });
+  it('kit.css bleibt ohne Befund', () => {
+    expect(stilBefunde(readFileSync(new URL('../src/stile/kit.css', import.meta.url), 'utf8'))).toEqual([]);
+  });
+});
