@@ -43,7 +43,7 @@ Knopf-Token, greift der Fallback auf das umgekehrte Flächenpaar. Der Kontrast-L
 wirksamen Wert.
 
 Stil-Lint: `paletteLint()` prüft jedes CSS unter `src/` ausser `palette.css` und die `<style>`-Blöcke
-aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften,
+aller `.astro`-Dateien unter `src/`. Verboten sind Farbliterale in Farbeigenschaften (auch `border-image`, `list-style-image` und die Farbe in `drop-shadow(…)` von `filter`),
 `--pal-*`-Deklarationen, `transparent` als Text- oder Linienfarbe, CSS-Escapes im
 Eigenschaftsnamen und ausserhalb von `.kit-knopf` jede `text-decoration`-Linie ausser `underline`
 (Links im Fliesstext und in Kit-Abschnitten bleiben unterstrichen). Ausnahme ab 0.3.0: `text-decoration: none`
@@ -56,6 +56,7 @@ eine Klasse plus Elemente oder zwei Klassen ohne Element), nirgends `kit-` vorko
 `layer` tragen (Befund, auch über eine Zwischendatei), sonst gewänne jedes Site-CSS gegen `kit.css`; `@layer`-Blöcke bleiben erlaubt. **Folge:** Fliesstext, den die Site
 selbst rendert (etwa Markdown), muss in `class="kit-fliesstext"` stehen; sonst verliert er mit einer globalen
 Regel wie `a { text-decoration: none }` die Unterstreichung, ohne dass der Lint es merkt.
+Die Zerlegung des CSS kennt Zeichenketten (auch mit Escape), Kommentare und ungequotetes `url(…)`; ein nicht geschlossener String, Kommentar, `url(` oder Block und ein überzähliges `}` sind Befunde (`CSS nicht sicher lesbar`), kein Wurf.
 Farbverläufe: `linear-gradient` ist erlaubt, wenn jeder Farbstopp `var(--pal-*)`, `transparent` oder genau
 `color-mix(in srgb, var(--pal-*) n%, transparent)` (n von 0 bis 100) ist, dazu Richtung, Winkel und Positionen.
 Literal-Farben im Verlauf, andere `color-mix`-Formen, `radial-gradient` und `repeating-linear-gradient` bleiben
@@ -85,9 +86,9 @@ Schema-Vertrag im JSON-Schema: `x-gestaltung` (Major.Minor), `x-gestaltungsstufe
 
 Nur aus der Release-CI dieses Repos: Tag `vX.Y.Z` auf `main`, Tests, Pack-Prüfung,
 Identifikator-Scan, Versions-Test gegen die gepinnte Basisversion aus `scripts/versions-basis.json` (Exporte bleiben eine
-Obermenge, jede alte `kit.css`-Regel bleibt wörtlich und in gleicher Ordnung enthalten, das normalisierte HTML der Fixture-Site
+Obermenge, jede alte Regel von `kit.css` und `palette.vorlage.css` bleibt wörtlich und in gleicher Ordnung enthalten, das normalisierte HTML der Fixture-Site
 bleibt gleich; Abweichungen nur über `scripts/versions-ausnahmen.json`, je Eintrag `basis`, `regel` oder
-`seite` und `begruendung`, gültig nur für genau diese Basisversion), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
+`seite` und `begruendung`, gültig nur für genau diese Basisversion; eine Ausnahme, die im Lauf keine Abweichung deckt, ist selbst ein Befund), dann `npm publish --provenance` per Trusted Publishing. Kein Token.
 Das Paket enthält keine Kundendaten.
 
 Ablauf, Freigabe, Listenpflege und Rückweg bei einem Leck: [RELEASE.md](https://github.com/bondwerk/product-site-kit/blob/main/RELEASE.md).

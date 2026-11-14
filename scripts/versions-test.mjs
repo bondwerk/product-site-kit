@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 // Versions-Test (Spec #435 §4.4/§11.1, Plan B12; Teil 2 Phase 2 §8/S5): node scripts/versions-test.mjs
 // Installiert die gepinnte Basis aus scripts/versions-basis.json ohne Skripte und ohne Peers, prüft ihre integrity gegen
-// den Pin und vergleicht Exporte (Obermenge), kit.css (jede alte Regel wörtlich und in gleicher Ordnung enthalten) und das normalisierte HTML
+// den Pin und vergleicht Exporte (Obermenge), kit.css und palette.vorlage.css (jede alte Regel wörtlich und in gleicher Ordnung enthalten) und das normalisierte HTML
 // der Fixture-Site (test/fixture-site mit scripts/versions-fixture.json), gebaut einmal mit der Basis, einmal mit dist/.
-// Abweichungen lässt nur scripts/versions-ausnahmen.json zu (je Eintrag genau eine Basisversion).
+// Abweichungen lässt nur scripts/versions-ausnahmen.json zu (je Eintrag genau eine Basisversion); eine Ausnahme ohne Wirkung ist ein Befund.
 // Erwartet ein gebautes dist/. Läuft nur in Jobs ohne Secrets und ohne id-token.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ausnahmenBefunde, basisBefunde, cssBefunde, fehlendeExporte, htmlBefunde, integritaetAusLock } from './versionen-regeln.mjs';
+import { ausnahmenBefunde, basisBefunde, cssVergleiche, fehlendeExporte, htmlBefunde, integritaetAusLock, unwirksameAusnahmen } from './versionen-regeln.mjs';
 
 const basis = JSON.parse(readFileSync('scripts/versions-basis.json', 'utf8'));
 const ausnahmen = JSON.parse(readFileSync('scripts/versions-ausnahmen.json', 'utf8'));
@@ -40,8 +40,11 @@ async function exporte(wurzel) {
 const VORIGE = join(ARBEIT, 'node_modules/@bondwerk/site-kit');
 const befunde = fehlendeExporte(await exporte(VORIGE), await exporte(KIT)).map((b) => `Export fehlt: ${b}`);
 
-const kitCss = (wurzel) => readFileSync(join(wurzel, 'dist/stile/kit.css'), 'utf8');
-befunde.push(...cssBefunde(kitCss(VORIGE), kitCss(KIT), ausnahmen, basis.version).map((b) => `kit.css: ${b}`));
+// Beide Stylesheets des Kits: kit.css und die Vorlage für src/styles/palette.css (Issue #4 Punkt 4).
+const STILE = ['kit.css', 'palette.vorlage.css'];
+const stil = (wurzel, name) => readFileSync(join(wurzel, 'dist/stile', name), 'utf8');
+const cssPaare = Object.fromEntries(STILE.map((n) => [n, [stil(VORIGE, n), stil(KIT, n)]]));
+befunde.push(...cssVergleiche(cssPaare, ausnahmen, basis.version));
 
 // Builds mit cwd und outDir in der Fixture (gitignored; Astro verschiebt Assets per rename, /tmp wäre ein anderes Gerät).
 const FIXTURE = join(KIT, 'test/fixture-site');
@@ -56,8 +59,12 @@ try {
     return Object.fromEntries(readdirSync(ziel, { withFileTypes: true }).filter((e) => e.isDirectory() && e.name !== '_astro')
       .map((e) => [e.name, readFileSync(join(ziel, e.name, 'index.html'), 'utf8')]));
   };
-  befunde.push(...htmlBefunde(seitenHtml(VORIGE, 'vorige'), seitenHtml(KIT, 'neu'), ausnahmen, basis.version));
+  const altSeiten = seitenHtml(VORIGE, 'vorige');
+  const neuSeiten = seitenHtml(KIT, 'neu');
+  befunde.push(...htmlBefunde(altSeiten, neuSeiten, ausnahmen, basis.version));
+  // Issue #4 Punkt 5: Ausnahmen, die in diesem Lauf nichts decken, sind selbst ein Befund.
+  befunde.push(...unwirksameAusnahmen(ausnahmen, basis.version, { css: Object.values(cssPaare), html: [altSeiten, neuSeiten] }));
 } finally { rmSync(lauf, { recursive: true, force: true }); }
 
 if (befunde.length) { console.error(befunde.join('\n')); process.exit(1); }
-console.log(`versions-test gegen ${basis.version}: Exporte, kit.css und HTML ok`);
+console.log(`versions-test gegen ${basis.version}: Exporte, kit.css, palette.vorlage.css und HTML ok`);

@@ -224,3 +224,96 @@ describe('stilBefunde — Verlauf mit abgeschwächter Palette-Farbe über color-
     }
   });
 });
+
+describe('stilBefunde — border-image, list-style-image und filter: drop-shadow (Issue #4 Punkt 1)', () => {
+  const FARBE = (z: string) => [`Farbe nicht aus der Palette: ${z}`];
+  const PAL = 'linear-gradient(var(--pal-seite-bg), var(--pal-akzent-bg))';
+  it('Bildeigenschaften verhalten sich wie background-image: Literal-Verlauf Befund, Palette-Verlauf und none grün', () => {
+    for (const eig of ['border-image', 'border-image-source', '-webkit-border-image', 'list-style-image', 'BORDER-IMAGE', 'List-Style-Image']) {
+      expect(stilBefunde(`.x { ${eig}: red; }`), eig).toEqual(FARBE(`«.x { ${eig}: red }»`));
+      expect(stilBefunde(`.x { ${eig}: linear-gradient(#000, #fff); }`), eig).toHaveLength(1);
+      expect(stilBefunde(`.x { ${eig}: ${PAL}; }`), eig).toEqual([]);
+      expect(stilBefunde(`.x { ${eig}: none; }`), eig).toEqual([]);
+      expect(stilBefunde(`.x { ${eig}: url(x.png); }`), eig).toEqual(stilBefunde('.x { background-image: url(x.png); }').map((b) => b.replace('background-image', eig)));
+    }
+    expect(stilBefunde(`.x { border-image: ${PAL} 1; }`)).toEqual([]);
+    expect(stilBefunde('.x { border-image: red 1; }')).toHaveLength(1);
+  });
+  it('filter: Farbe in drop-shadow wird geprüft, in allen Schreibweisen und Präfixen', () => {
+    for (const eig of ['filter', '-webkit-filter', 'backdrop-filter', '-webkit-backdrop-filter', 'FILTER', 'Filter']) {
+      for (const farbe of ['red', '#ff0000', '#f00', 'rgb(1, 2, 3)', 'hsl(0 100% 50%)', 'RED', 'color-mix(in srgb, red, blue)', 'var(--anderes)', 'var(--pal-x, red)']) {
+        const z = `${eig}: drop-shadow(0 0 2px ${farbe})`;
+        expect(stilBefunde(`.x { ${z}; }`), z).toEqual(FARBE(`«.x { ${z} }»`));
+      }
+    }
+    expect(stilBefunde('.x { filter: DROP-SHADOW(0 0 2px RED); }')).toHaveLength(1);
+    expect(stilBefunde('.x { filter: drop-shadow(\n  0   0\n 2px   red ); }')).toHaveLength(1);
+    expect(stilBefunde('.x { filter: drop-shadow(0 0 2px red) !important; }')).toHaveLength(1);
+  });
+  it('filter: Palette-Farben, currentcolor, transparent und alle farblosen Filter sind grün', () => {
+    for (const w of ['none', 'blur(2px)', 'brightness(1.2) contrast(110%)', 'url(#f)', 'drop-shadow()', 'inherit',
+      'drop-shadow(0 0 2px var(--pal-rahmen))', 'drop-shadow(0 0 2px var(--pal-hell-knopf-bg, var(--pal-hell-text)))', 'drop-shadow(0 0 2px currentcolor)',
+      'drop-shadow(-1px 0.5em 0 transparent)', 'drop-shadow(0 0 2px)', 'blur(2px) drop-shadow(0 0 2px var(--pal-rahmen)) contrast(1.1)',
+      'drop-shadow(0 0 2px var(--pal-rahmen)) drop-shadow(1px 1px 0 var(--pal-seite-text))', 'blur(2px) !important', 'my-drop-shadow(red)', 'xdrop-shadow(red)',
+      'foo(red)']) {
+      expect(stilBefunde(`.x { filter: ${w}; }`), w).toEqual([]);
+      expect(stilBefunde(`.x { -webkit-filter: ${w}; backdrop-filter: ${w}; }`), w).toEqual([]);
+    }
+    expect(stilBefunde('.x { filter: ; }')).toEqual([]);
+  });
+  it('filter: mehrere drop-shadow und verschachtelte Klammern: jede Farbe zählt, ein Befund je Deklaration', () => {
+    const z = (w: string) => `«.x { filter: ${w} }»`;
+    const a = 'drop-shadow(0 0 2px var(--pal-rahmen)) drop-shadow(1px 1px 0 red)';
+    expect(stilBefunde(`.x { filter: ${a}; }`)).toEqual(FARBE(z(a)));
+    const b = 'drop-shadow(0 0 2px red) drop-shadow(1px 1px 0 blue)';
+    expect(stilBefunde(`.x { filter: ${b}; }`)).toEqual(FARBE(z(b)));
+    const c = 'blur(calc(1px + 1px)) drop-shadow(0 0 2px rgb(1, 2, 3)) contrast(1.1)';
+    expect(stilBefunde(`.x { filter: ${c}; }`)).toEqual(FARBE(z(c)));
+    const d = 'blur(2px) drop-shadow(0 0 2px var(--pal-rahmen)) drop-shadow(0 0 1px #fff)';
+    expect(stilBefunde(`.x { filter: ${d}; }`)).toEqual(FARBE(z(d)));
+  });
+  it('filter: Fehlerpfad, nicht geschlossenes drop-shadow ist ein Befund', () => {
+    const w = 'drop-shadow(0 0 2px var(--pal-rahmen)';
+    expect(stilBefunde(`.x { filter: ${w}; }`)).toEqual(FARBE(`«.x { filter: ${w} }»`));
+  });
+});
+
+// Issue #4 Punkt 6, Stil-Lint: Zerlegung kennt Strings (auch mit Escape), Kommentare, Klammertiefe; Offenes ist ein Befund.
+describe('stilBefunde — Strings, Kommentare, Offenes (Issue #4 Punkt 6)', () => {
+  const ROT = (sel: string, d: string): string => `Farbe nicht aus der Palette: «${sel} { ${d} }»`;
+  const OFFEN = (was: string): string => `CSS nicht sicher lesbar: ${was}`;
+  const FAELLE: Array<[string, string, string[]]> = [
+    ['} im "String": Farbe danach wird gemeldet', 'a { content: "}"; color: red; }', [ROT('a', 'color: red')]],
+    ["} im 'String': Farbe danach wird gemeldet", "a { content: '}'; color: red; }", [ROT('a', 'color: red')]],
+    ['; im String: Farbe danach wird gemeldet', 'a { content: "a;b"; color: red; }', [ROT('a', 'color: red')]],
+    ['; im String: Text im String ist keine Deklaration', 'a { content: "x;color:red"; gap: 0; }', []],
+    ['{ im String: Farbe danach wird gemeldet', 'a { content: "{"; color: red; }', [ROT('a', 'color: red')]],
+    ['{ im String: Text im String ist kein Block', 'a { content: "{ color: red }"; gap: 0; }', []],
+    [': im String: Farbe danach wird gemeldet', 'a { content: "a:b"; color: red; }', [ROT('a', 'color: red')]],
+    [': im String: Text im String ist keine Deklaration', 'a { content: "color:red"; gap: 0; }', []],
+    ['escaptes " im String: } bleibt im String', 'a { content: "a\\"}"; color: red; }', [ROT('a', 'color: red')]],
+    ['escaptes " im String: ; und } bleiben im String', 'a { content: "a\\"; color:red; }"; gap: 0; }', []],
+    ["escaptes ' im String", "a { content: 'a\\'}'; color: red; }", [ROT('a', 'color: red')]],
+    ['Kommentar /* } */', 'a { /* } */ color: red; }', [ROT('a', 'color: red')]],
+    ['Kommentar /* ; */ versteckt nichts und erfindet nichts', 'a { content: x; /* ; color: red */ gap: 0; }', []],
+    ['Kommentar /* " */ öffnet keinen String', 'a { /* " */ color: red; }', [ROT('a', 'color: red')]],
+    ['Kommentar mit Farbe bleibt ohne Befund', 'a { /* color: red; */ gap: 0; }', []],
+    ['/* im String ist kein Kommentar', 'a { content: "/*"; color: red; } b { content: "*/"; }', [ROT('a', 'color: red')]],
+    ['String im Selektor', 'a[title="}"] { color: red; }', [ROT('a[title="}"]', 'color: red')]],
+    ['ungequotetes url(data:…;…}…) schützt ; und }', 'a { mask-image: url(data:image/svg+xml;base64,AA}A); gap: 0; color: red; }', [ROT('a', 'color: red')]],
+    ['verschachtelte Regel mit String', '.a { .b { content: "}"; color: red; } gap: 0; }', [ROT('.b', 'color: red')]],
+    ['@media mit String: beide Regeln werden gelesen', '@media (min-width: 1px) { a { content: "}"; color: red; } b { color: blue; } }', [ROT('a', 'color: red'), ROT('b', 'color: blue')]],
+    ['@import mit ; im String endet nicht den Kopf', '@import "a;b.css"; a { color: red; }', [ROT('a', 'color: red')]],
+    ['offener String ist ein Befund', 'a { content: "x; color: red; }', [OFFEN('Zeichenkette nicht geschlossen')]],
+    ['offener Kommentar ist ein Befund, Vorheriges wird geprüft', 'a { color: red; } /* offen', [ROT('a', 'color: red'), OFFEN('Kommentar nicht geschlossen')]],
+    ['offener Block ist ein Befund', 'a { color: red; ', [OFFEN('«{» nicht geschlossen')]],
+    ['überzähliges } ist ein Befund', 'a { color: red; } }', [ROT('a', 'color: red'), OFFEN('«}» ohne öffnendes «{»')]],
+    ['offene ( ist ein Befund', 'a { background: url(x; color: red; }', [OFFEN('«(» nicht geschlossen')]],
+  ];
+  it.each(FAELLE)('%s', (_name, css, soll) => {
+    expect(stilBefunde(css)).toEqual(soll);
+  });
+  it('kit.css bleibt ohne Befund', () => {
+    expect(stilBefunde(readFileSync(new URL('../src/stile/kit.css', import.meta.url), 'utf8'))).toEqual([]);
+  });
+});

@@ -1,7 +1,10 @@
 // Spec #435 §7.1/§7.2, Plan B2/B18: Stil-Lint für jedes CSS ausser palette.css (Kit und Site). Kein node:*.
 const FARB_EIGENSCHAFT = new RegExp('^(color|background(-color|-image)?|border(-(top|right|bottom|left))?(-color)?'
   + '|border-(block|inline)(-(start|end))?(-color)?|outline(-color)?|text-decoration(-color)?|box-shadow|text-shadow'
-  + '|-webkit-text-fill-color|column-rule(-color)?|text-emphasis(-color)?|fill|stroke|caret-color|accent-color|all)$');
+  + '|-webkit-text-fill-color|column-rule(-color)?|text-emphasis(-color)?|fill|stroke|caret-color|accent-color|all'
+  + '|(-webkit-)?border-image(-source)?|list-style-image|(-webkit-)?(backdrop-)?filter)$');
+/** filter trägt auch farblose Funktionen (blur, brightness …); geprüft wird nur die Farbe in drop-shadow(…). */
+const FILTER = /^(-webkit-)?(backdrop-)?filter$/;
 const ERLAUBT = /^(currentcolor|transparent|inherit|none|solid|dashed|dotted|double|wavy|underline|overline|line-through|blink|0|-?\d*\.?\d+(px|rem|em|%)?)$/i;
 const PALETTE_VAR = /var\(--pal-[a-z-]+(?:,\s*var\(--pal-[a-z-]+\))?\)/g;
 /** Eigenschaften, bei denen transparent den Text oder seine Linie unsichtbar macht. */
@@ -110,33 +113,120 @@ function ohnePaletteVerlaeufe(wert: string): string {
   return aus + wert.slice(pos);
 }
 
-/** Blöcke mit ihren Deklarationen; verschachtelt = eine umgebende Regel ist eine Stilregel (CSS-Nesting), keine @-Regel. */
-function bloecke(css: string): Array<{ selektor: string; dekl: string; verschachtelt: boolean }> {
-  const out: Array<{ selektor: string; dekl: string; verschachtelt: boolean }> = [];
+/** Wertteile innerhalb aller drop-shadow(…) eines filter-Werts; ein nicht geschlossenes drop-shadow bleibt samt Namen stehen und wird so zum Befund. */
+function dropShadowTeile(wert: string): string[] {
+  const anfang = /(?<![\w-])drop-shadow\(/gi;
+  const teile: string[] = [];
+  for (let m = anfang.exec(wert); m; m = anfang.exec(wert)) {
+    let tiefe = 1; let ende = m.index + m[0].length;
+    for (; ende < wert.length && tiefe > 0; ende++) tiefe += wert[ende] === '(' ? 1 : wert[ende] === ')' ? -1 : 0;
+    const innen = tiefe > 0 ? wert.slice(m.index) : wert.slice(m.index + m[0].length, ende - 1);
+    teile.push(...innen.replace(PALETTE_VAR, '').split(/[\s,]+/).filter(Boolean));
+    anfang.lastIndex = ende;
+  }
+  return teile;
+}
+
+/** Index nach dem Ende der Zeichenkette, die bei text[i] (" oder ') beginnt; Backslash maskiert das nächste Zeichen; -1, wenn sie nicht schliesst. */
+function stringEnde(text: string, i: number): number {
+  for (let j = i + 1; j < text.length; j++) {
+    if (text[j] === '\\') j++;
+    else if (text[j] === text[i]) return j + 1;
+  }
+  return -1;
+}
+
+/** Bei text[i] == «(» eines ungequoteten url( … ): Index nach der schliessenden «)»; -1, wenn sie fehlt; null, wenn hier kein ungequotetes url( beginnt. */
+function urlEnde(text: string, i: number): number | null {
+  if (text[i] !== '(' || !/(?<![\w-])url$/i.test(text.slice(Math.max(0, i - 4), i))) return null;
+  let j = i + 1;
+  while (/\s/.test(text[j] ?? '')) j++;
+  if (text[j] === '"' || text[j] === "'") return null;   // url("…") liest die Zeichenkette
+  for (; j < text.length; j++) {
+    if (text[j] === '\\') j++;
+    else if (text[j] === ')') return j + 1;
+  }
+  return -1;
+}
+
+/** Teilt an zeichen ausserhalb von Zeichenketten, ungequoteten url(…) und Escapes; Kommentare sind beim Lesen schon entfernt. */
+function teileAn(text: string, zeichen: string): string[] {
+  const teile: string[] = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const z = text[i]!;
+    if (z === '"' || z === "'") { const e = stringEnde(text, i); if (e < 0) break; i = e - 1; }
+    else if (z === '\\') i++;
+    else if (z === '(') { const e = urlEnde(text, i); if (e === -1) break; if (e) i = e - 1; }
+    else if (z === zeichen) { teile.push(text.slice(start, i)); start = i + 1; }
+  }
+  teile.push(text.slice(start));
+  return teile;
+}
+
+/** Index des ersten Doppelpunkts ausserhalb von Zeichenketten und Escapes; -1, wenn keiner. */
+function ersterDoppelpunkt(text: string): number {
+  for (let i = 0; i < text.length; i++) {
+    const z = text[i]!;
+    if (z === '"' || z === "'") { const e = stringEnde(text, i); if (e < 0) return -1; i = e - 1; }
+    else if (z === '\\') i++;
+    else if (z === ':') return i;
+  }
+  return -1;
+}
+
+type Block = { selektor: string; dekl: string; verschachtelt: boolean };
+
+/**
+ * Blöcke mit ihren Deklarationen; verschachtelt = eine umgebende Regel ist eine Stilregel (CSS-Nesting), keine @-Regel.
+ * Gleiche Lesart wie cssRegeln in scripts/versionen-regeln.mjs: Kommentare fallen beim Lesen weg, {, } und ; in Zeichenketten,
+ * in ungequoteten url(data:…;base64,…) und nach einem Backslash gliedern nichts. Was sich nicht sicher lesen lässt
+ * (offene Zeichenkette, offener Kommentar, offene oder überzählige Klammer), kommt als Text in fehler zurück; es wirft nie.
+ */
+function bloecke(css: string): { out: Block[]; fehler: string[] } {
+  const out: Block[] = [];
+  const fehler: string[] = [];
   const stapel: Array<{ selektor: string; dekl: string }> = [];
-  let puffer = '';
-  for (const z of css) {
-    if (z === '{') {
-      const i = puffer.lastIndexOf(';');
-      if (stapel.length) stapel.at(-1)!.dekl += puffer.slice(0, i + 1);
-      stapel.push({ selektor: puffer.slice(i + 1).trim(), dekl: '' });
-      puffer = '';
+  let puffer = ''; let semi = -1;   // semi: Index des letzten ; auf oberster Ebene im Puffer
+  for (let i = 0; i < css.length; i++) {
+    const z = css[i]!;
+    if (z === '/' && css[i + 1] === '*') {
+      const e = css.indexOf('*/', i + 2);
+      if (e < 0) { fehler.push('Kommentar nicht geschlossen'); return { out, fehler }; }
+      i = e + 1;
+    } else if (z === '"' || z === "'") {
+      const e = stringEnde(css, i);
+      if (e < 0) { fehler.push('Zeichenkette nicht geschlossen'); return { out, fehler }; }
+      puffer += css.slice(i, e); i = e - 1;
+    } else if (z === '\\') { puffer += css.slice(i, i + 2); i++; }
+    else if (z === '(' && urlEnde(css, i) !== null) {
+      const e = urlEnde(css, i)!;
+      if (e < 0) { fehler.push('«(» nicht geschlossen'); return { out, fehler }; }
+      puffer += css.slice(i, e); i = e - 1;
+    }
+    else if (z === ';') { semi = puffer.length; puffer += z; }
+    else if (z === '{') {
+      if (stapel.length) stapel.at(-1)!.dekl += puffer.slice(0, semi + 1);
+      stapel.push({ selektor: puffer.slice(semi + 1).trim(), dekl: '' });
+      puffer = ''; semi = -1;
     } else if (z === '}') {
       const b = stapel.pop();
       if (b) out.push({ selektor: b.selektor, dekl: b.dekl + puffer, verschachtelt: stapel.some((e) => !e.selektor.startsWith('@')) });
-      puffer = '';
+      else fehler.push('«}» ohne öffnendes «{»');
+      puffer = ''; semi = -1;
     } else puffer += z;
   }
-  return out;
+  if (stapel.length) fehler.push('«{» nicht geschlossen');
+  return { out, fehler };
 }
 
 /** Ein Befund je verletzter Deklaration; Selektoren innerhalb von @media werden einzeln geprüft. */
 export function stilBefunde(css: string): string[] {
   const befunde: string[] = [];
-  const ohneKommentar = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const { selektor, dekl, verschachtelt } of bloecke(ohneKommentar)) {
-    for (const d of dekl.split(';').map((x) => x.trim()).filter(Boolean)) {
-      const i = d.indexOf(':');
+  const { out, fehler } = bloecke(css);
+  for (const { selektor, dekl, verschachtelt } of out) {
+    for (const d of teileAn(dekl, ';').map((x) => x.trim()).filter(Boolean)) {
+      const i = ersterDoppelpunkt(d);
       if (i < 0) continue;
       const roh = d.slice(0, i).trim();
       const eig = roh.toLowerCase();
@@ -153,10 +243,10 @@ export function stilBefunde(css: string): string[] {
       if (OHNE_TRANSPARENT.test(eig) && teile.some((t) => t.toLowerCase() === 'transparent')) {
         befunde.push(`Text- oder Linienfarbe transparent: ${zitat}`);
       }
-      if (FARB_EIGENSCHAFT.test(eig) && teile.some((t) => !ERLAUBT.test(t))) {
+      if (FARB_EIGENSCHAFT.test(eig) && (FILTER.test(eig) ? dropShadowTeile(wert) : teile).some((t) => !ERLAUBT.test(t))) {
         befunde.push(`Farbe nicht aus der Palette: ${zitat}`);
       }
     }
   }
-  return befunde;
+  return [...befunde, ...fehler.map((f) => `CSS nicht sicher lesbar: ${f}`)];
 }
